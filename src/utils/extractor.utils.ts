@@ -14,7 +14,7 @@ export async function extractPrice(website: Website, url: string) {
   switch (website) {
     case 'flipkart':
       priceText = $(
-        '#container > div > div._2c7YLP.UtUXW0._6t1WkM._3HqJxg > div._1YokD2._2GoDe3 > div._1YokD2._3Mn1Gg.col-8-12 > div:nth-child(2) > div > div.dyC4hf.pZkvcx > div.CEmiEU > div > div._30jeq3._16Jk6d'
+        '#container > div > div._2c7YLP.UtUXW0._6t1WkM._3HqJxg > div._1YokD2._2GoDe3 > div._1YokD2._3Mn1Gg.col-8-12 > div:nth-child(2) > div > div.dyC4hf > div.CEmiEU > div > div'
       ).html();
       break;
     case 'amazon':
