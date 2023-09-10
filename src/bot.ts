@@ -26,7 +26,7 @@ bot.command([BOT_COMMANDS.START, BOT_COMMANDS.HELP], async (ctx) => {
     console.error('UNEXPECTED ERROR OCCOURED:: ' + JSON.stringify(error));
   }
   ctx.reply(
-    "I can help you track prices for products.\nFor now, It support Amazon and Flipkart (Planning to add more in the future)\n\n/list\n/create <url> <website>\n/delete <hash>\n\nYou'll receive notification when price changes."
+    "Get real-time alerts on price changes and shop smarter with BargainSherlock by your side.\nFor now, I can only track prices from Amazon and Flipkart.\n\n/list\n/create <url> <website>\n/delete <hash>\n\nYou'll receive notification when price changes."
   );
 });
 
@@ -41,7 +41,7 @@ bot.command(BOT_COMMANDS.CREATE, async (ctx) => {
   try {
     const userId = ctx.from!.id;
     const { hash, currentPrice } = await trackerUtils.createTracker(userId, input.data);
-    ctx.reply(`Current Price: ${currentPrice} \nWe'll notify once the price changes.`);
+    ctx.reply(`Current Price: ${currentPrice} \nI'll notify you when the price changes.`);
     return ctx.reply(`
       Tracker Hash: \n${hash} \n\nTo delete a tracker, use "/delete <tracker_hash>"
     `);
