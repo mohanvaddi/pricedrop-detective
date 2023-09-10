@@ -1,34 +1,20 @@
-import * as fs from 'fs';
-import path from 'path';
-import { TrackedResults, TrackerData } from '../types/main';
 import { z } from 'zod';
 import { NewTrackerDTO } from '../schemas/zod.schema';
 import { caluculateHash } from './hash.utils';
 import { extractPrice } from './extractor.utils';
 import { CustomError } from '../lib/custom.error';
+import SupabaseUtils from './supabse.utils';
 
 export default class TrackerUtils {
-  trackersFilePath = path.join(__dirname, '../_data/trackers.json');
-  constructor() {
-    if (!fs.existsSync(this.trackersFilePath)) throw new Error("Trackers file doesn't exist");
-  }
+  private supabase = new SupabaseUtils();
 
-  getTrackerData = (): TrackerData => {
-    return JSON.parse(fs.readFileSync(this.trackersFilePath, 'utf-8') || '{}');
-  };
-
-  setTrackerData = (trackerData: TrackerData) => {
-    return fs.writeFileSync(this.trackersFilePath, JSON.stringify(trackerData));
-  };
-
-  createTracker = (body: z.infer<typeof NewTrackerDTO>) => {
+  createTracker = (userId: number, body: z.infer<typeof NewTrackerDTO>) => {
     return new Promise<{ hash: string; currentPrice: number }>(async (resolve, reject) => {
       const { website, url } = body;
 
       const hash = caluculateHash(JSON.stringify({ website, url }));
-      const trackers = this.getTrackerData();
-
-      if (trackers[hash] !== undefined) {
+      const trackerExists = await this.supabase.checkIfTrackerExists(hash);
+      if (trackerExists) {
         return reject(new CustomError('Tracker Already Exists', 'TrackerExists'));
       }
 
@@ -39,57 +25,57 @@ export default class TrackerUtils {
         return reject(new CustomError('Unable to get price for given url', 'PriceNotFound'));
       }
 
-      trackers[hash] = { prices: [currentPrice], ...body };
-      this.setTrackerData(trackers);
-
+      await this.supabase.insertTracker(hash, userId, url, website);
+      await this.supabase.insertPrice(hash, currentPrice);
       return resolve({ hash, currentPrice });
     });
   };
 
   removeTracker = (hash: string) => {
     return new Promise<string>(async (resolve, reject) => {
-      let trackers = this.getTrackerData();
-      if (!trackers.hasOwnProperty(hash)) {
-        return reject(new CustomError("Tracker doesn't exist", 'TrackerNotFound'));
-      }
-      delete trackers[hash];
-      this.setTrackerData(trackers);
+      await this.supabase.removeTracker(hash).catch((error) => {
+        return reject(
+          new CustomError('Unable to remove tracker', 'TrackerError', {
+            error,
+          })
+        );
+      });
       return resolve(`Tracker Deleted`);
     });
   };
 
-  track = async (hash: string) => {
-    return new Promise<TrackedResults>(async (resolve, reject) => {
-      const trackers = this.getTrackerData();
-      const tracker = trackers[hash]!;
-      const { prices, url, website } = tracker;
+  // track = async (hash: string) => {
+  //   return new Promise<TrackedResults>(async (resolve, reject) => {
+  //     const trackers = this.getTrackerData();
+  //     const tracker = trackers[hash]!;
+  //     const { prices, url, website } = tracker;
 
-      let currentPrice: number;
-      try {
-        currentPrice = await extractPrice(website, url);
-      } catch (error) {
-        return reject(new CustomError('Unable to get price', 'PriceNotFound', { url, website }));
-      }
+  //     let currentPrice: number;
+  //     try {
+  //       currentPrice = await extractPrice(website, url);
+  //     } catch (error) {
+  //       return reject(new CustomError('Unable to get price', 'PriceNotFound', { url, website }));
+  //     }
 
-      const recentPrice: number = prices[prices.length - 1]!;
+  //     const recentPrice: number = prices[prices.length - 1]!;
 
-      // if price didn't change do nothing
-      if (currentPrice === recentPrice)
-        return reject(new CustomError("Price didn't change", 'PriceNotChanged', { url, website }));
+  //     // if price didn't change do nothing
+  //     if (currentPrice === recentPrice)
+  //       return reject(new CustomError("Price didn't change", 'PriceNotChanged', { url, website }));
 
-      // update the latest price in tracker data
-      trackers[hash] = {
-        ...tracker,
-        prices: [...prices, currentPrice],
-      };
-      this.setTrackerData(trackers);
+  //     // update the latest price in tracker data
+  //     trackers[hash] = {
+  //       ...tracker,
+  //       prices: [...prices, currentPrice],
+  //     };
+  //     this.setTrackerData(trackers);
 
-      return resolve({
-        url,
-        website,
-        recentPrice,
-        currentPrice,
-      });
-    });
-  };
+  //     return resolve({
+  //       url,
+  //       website,
+  //       recentPrice,
+  //       currentPrice,
+  //     });
+  //   });
+  // };
 }

@@ -1,14 +1,6 @@
 import { NewTrackerDTO } from '../schemas/zod.schema';
 
 export type Website = typeof NewTrackerDTO._type.website;
-export interface Tracker {
-  website: Website;
-  url: string;
-  prices: number[];
-}
-export interface TrackerData {
-  [hash: string]: Tracker;
-}
 
 export type CustomError = {
   error: true;
@@ -21,4 +13,19 @@ export interface TrackedResults {
   website: Website;
   currentPrice: number;
   recentPrice: number;
+}
+
+// extracted types
+export interface Tracker {
+  created_at: string;
+  id: string;
+  url: string;
+  user: number;
+  website: string;
+}
+
+export interface User {
+  created_at: string;
+  id: number;
+  username: string;
 }
