@@ -29,3 +29,10 @@ export interface User {
   id: number;
   username: string;
 }
+
+export interface Price {
+  created_at: string;
+  id: string;
+  price: number;
+  tracker: string;
+}

@@ -3,7 +3,7 @@ import { Database } from '../types/database.types';
 import config from '../config';
 import { SUPPORTED_SITES } from '../types/enums';
 import { CustomError } from '../lib/custom.error';
-import { Tracker, User } from '../types/main';
+import { Price, Tracker, User } from '../types/main';
 
 export default class SupabaseUtils {
   client: SupabaseClient<Database> = createClient<Database>(config.SUPABASE_URL, config.SUPABASE_KEY, {
@@ -151,6 +151,50 @@ export default class SupabaseUtils {
         );
       }
       return resolve('Price created:\n' + hash);
+    });
+  }
+
+  async fetchTrackers() {
+    return new Promise<Tracker[]>(async (resolve, reject) => {
+      const { data, error } = await this.client.from('trackers').select();
+      if (error) {
+        return reject(
+          new CustomError('Unable to fetch trackers', 'TrackersError', {
+            error,
+          })
+        );
+      }
+      return resolve(data as Tracker[]);
+    });
+  }
+
+  async fetchPricesByTracker(hash: string) {
+    return new Promise<Price[]>(async (resolve, reject) => {
+      const { data, error } = await this.client.from('prices').select().eq('tracker', hash).order('created_at', {
+        ascending: true,
+      });
+      if (error) {
+        return reject(
+          new CustomError('Unable to fetch prices', 'PricesError', {
+            error,
+          })
+        );
+      }
+      return resolve(data as Price[]);
+    });
+  }
+
+  async fetchTrackersByUser(userId: number) {
+    return new Promise<Tracker[]>(async (resolve, reject) => {
+      const { data, error } = await this.client.from('trackers').select().eq('user', userId);
+      if (error) {
+        return reject(
+          new CustomError('Unable to fetch trackers', 'TrackersError', {
+            error,
+          })
+        );
+      }
+      return resolve(data as Tracker[]);
     });
   }
 }

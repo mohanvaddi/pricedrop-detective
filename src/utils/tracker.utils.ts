@@ -4,6 +4,8 @@ import { caluculateHash } from './hash.utils';
 import { extractPrice } from './extractor.utils';
 import { CustomError } from '../lib/custom.error';
 import SupabaseUtils from './supabse.utils';
+import { Tracker } from '../types/main';
+import { SUPPORTED_SITES } from '../types/enums';
 
 export default class TrackerUtils {
   private supabase = new SupabaseUtils();
@@ -44,38 +46,32 @@ export default class TrackerUtils {
     });
   };
 
-  // track = async (hash: string) => {
-  //   return new Promise<TrackedResults>(async (resolve, reject) => {
-  //     const trackers = this.getTrackerData();
-  //     const tracker = trackers[hash]!;
-  //     const { prices, url, website } = tracker;
+  track = async (tracker: Tracker) => {
+    return new Promise<{ currentPrice: number; recentPrice: number }>(async (resolve, reject) => {
+      const { id: hash, url, website } = tracker;
+      const prices = await this.supabase.fetchPricesByTracker(tracker.id);
 
-  //     let currentPrice: number;
-  //     try {
-  //       currentPrice = await extractPrice(website, url);
-  //     } catch (error) {
-  //       return reject(new CustomError('Unable to get price', 'PriceNotFound', { url, website }));
-  //     }
+      let currentPrice: number;
+      try {
+        currentPrice = await extractPrice(website as SUPPORTED_SITES, url);
+      } catch (error) {
+        return reject(new CustomError('Unable to get price', 'PriceNotFound', { url, website }));
+      }
+      const recentPrice: number = prices[prices.length - 1]!.price;
 
-  //     const recentPrice: number = prices[prices.length - 1]!;
+      // if price didn't change do nothing
+      if (currentPrice === recentPrice) {
+        return reject(new CustomError("Price didn't change", 'PriceNotChanged', { url, website }));
+      }
 
-  //     // if price didn't change do nothing
-  //     if (currentPrice === recentPrice)
-  //       return reject(new CustomError("Price didn't change", 'PriceNotChanged', { url, website }));
+      await this.supabase.insertPrice(hash, currentPrice).catch((err) => {
+        return reject(new CustomError('Unable to inser price', 'PriceError', { err }));
+      });
 
-  //     // update the latest price in tracker data
-  //     trackers[hash] = {
-  //       ...tracker,
-  //       prices: [...prices, currentPrice],
-  //     };
-  //     this.setTrackerData(trackers);
-
-  //     return resolve({
-  //       url,
-  //       website,
-  //       recentPrice,
-  //       currentPrice,
-  //     });
-  //   });
-  // };
+      return resolve({
+        recentPrice,
+        currentPrice,
+      });
+    });
+  };
 }

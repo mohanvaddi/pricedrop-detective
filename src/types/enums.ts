@@ -8,4 +8,5 @@ export enum BOT_COMMANDS {
   HELP = 'HELP',
   CREATE = 'create',
   DELETE = 'delete',
+  LIST = 'list',
 }
