@@ -4,13 +4,14 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "run": "ts-node src/bot.ts",
+    "db:gen-types": "npx supabase gen types typescript --project-id xkvhqwufqmaxzxvtdjny > src/types/database.types.ts",
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@supabase/supabase-js": "^2.33.1",
     "axios": "^1.5.0",
     "axios-retry": "^3.7.0",
     "body-parser": "^1.20.2",
@@ -27,6 +28,7 @@
     "@types/express": "^4.17.17",
     "@types/node": "^20.5.9",
     "@types/uuid": "^9.0.3",
+    "supabase": "^1.93.0",
     "ts-node": "^10.9.1",
     "ts-node-dev": "^2.0.0"
   }

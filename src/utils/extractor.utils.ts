@@ -9,7 +9,7 @@ export async function extractPrice(website: Website, url: string) {
 
   const { data } = await client.get(url);
 
-  const $ = cheerio.load(data);
+  const $: cheerio.CheerioAPI = cheerio.load(data);
   let priceText: string | null;
   switch (website) {
     case 'flipkart':
@@ -25,8 +25,6 @@ export async function extractPrice(website: Website, url: string) {
     default:
       throw new Error("couldn't find selector for given website");
   }
-
-  console.log(priceText);
 
   if (!priceText) throw new Error('Unable to get price');
   return parseInt(priceText.replace(/[₹$,]/g, ''));

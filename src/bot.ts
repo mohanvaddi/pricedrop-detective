@@ -4,13 +4,29 @@ import { NewTrackerDTO } from './schemas/zod.schema';
 import { BOT_COMMANDS } from './types/enums';
 import TrackerUtils from './utils/tracker.utils';
 import { CustomError } from './lib/custom.error';
+import SupabaseUtils from './utils/supabse.utils';
 
 const bot = new Bot(config.TELEGRAM_BOT_TOKEN);
 const trackerUtils = new TrackerUtils();
+const supabase = new SupabaseUtils();
 
-bot.command([BOT_COMMANDS.START, BOT_COMMANDS.HELP], (ctx) => {
+bot.command([BOT_COMMANDS.START, BOT_COMMANDS.HELP], async (ctx) => {
+  const userId = ctx.from!.id;
+  try {
+    const userExists = await supabase.checkIfUserExists(userId);
+    if (!userExists) {
+      const username = ctx.from!.username!;
+      await supabase.createUser(userId, username);
+      ctx.reply('User created: ' + userId);
+    }
+  } catch (error) {
+    if (error instanceof CustomError) {
+      return ctx.reply(error.message);
+    }
+    console.error('UNEXPECTED ERROR OCCOURED:: ' + JSON.stringify(error));
+  }
   ctx.reply(
-    "I can help you track prices for products.\nFor now, It support Amazon and Flipkart (Planning to add more in the future)\n\n/create <url> <website>\n/delete <hash>\n\nYou'll receive notifications in @MV01Price channel"
+    "I can help you track prices for products.\nFor now, It support Amazon and Flipkart (Planning to add more in the future)\n\n/list\n/create <url> <website>\n/delete <hash>\n\nYou'll receive notification when price changes."
   );
 });
 
@@ -23,10 +39,11 @@ bot.command(BOT_COMMANDS.CREATE, async (ctx) => {
   }
 
   try {
-    const { hash, currentPrice } = await trackerUtils.createTracker(input.data);
+    const userId = ctx.from!.id;
+    const { hash, currentPrice } = await trackerUtils.createTracker(userId, input.data);
     ctx.reply(`Current Price: ${currentPrice} \nWe'll notify once the price changes.`);
     return ctx.reply(`
-      Tracker Hash: \n ${hash} \n\nTo delete a tracker, use "/delete <tracker_hash>"
+      Tracker Hash: \n${hash} \n\nTo delete a tracker, use "/delete <tracker_hash>"
     `);
   } catch (error) {
     if (error instanceof CustomError) {
@@ -45,6 +62,33 @@ bot.command(BOT_COMMANDS.DELETE, async (ctx) => {
   try {
     const resp = await trackerUtils.removeTracker(hash);
     return ctx.reply(resp);
+  } catch (error) {
+    if (error instanceof CustomError) {
+      return ctx.reply(error.message);
+    }
+    console.error('UNEXPECTED ERROR OCCOURED:: ' + JSON.stringify(error));
+  }
+});
+
+bot.command(BOT_COMMANDS.LIST, async (ctx) => {
+  const userId = ctx.from!.id;
+  try {
+    const trackers = await supabase.fetchTrackersByUser(userId);
+    for (const { url, website, id } of trackers) {
+      ctx.reply(`hash:${id}\n<a href="${url}">product</a>`, {
+        parse_mode: 'HTML',
+        reply_markup: {
+          inline_keyboard: [
+            [
+              {
+                text: 'View Product on ' + <string>website.charAt(0).toUpperCase() + website.slice(1),
+                url: url,
+              },
+            ],
+          ],
+        },
+      });
+    }
   } catch (error) {
     if (error instanceof CustomError) {
       return ctx.reply(error.message);

@@ -2,10 +2,10 @@ import express, { Request, Response } from 'express';
 import bodyParser from 'body-parser';
 import TrackerUtils from './utils/tracker.utils';
 import bot from './bot';
-import config from './config';
 import { HttpStatusCode } from 'axios';
 import { CustomError } from './lib/custom.error';
 import { Tracker } from './types/main';
+import SupabaseUtils from './utils/supabse.utils';
 
 const app = express();
 const PORT = process.env['PORT'] || 4000;
@@ -14,29 +14,25 @@ const PORT = process.env['PORT'] || 4000;
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-const initBot = async () => {
-  await bot.start();
-  console.log('Bot Initialized');
-};
-
+const supabase = new SupabaseUtils();
 const trackerUtils = new TrackerUtils();
-
 app.get('/track', [
   async (_req: Request, res: Response) => {
-    const trackers = trackerUtils.getTrackerData();
-    const trackerEntries = Object.entries(trackers);
-    if (trackerEntries.length === 0) {
+    const trackers = await supabase.fetchTrackers();
+
+    if (trackers.length === 0) {
       return res.status(HttpStatusCode.BadRequest).send({
         error: 'No Trackers are available.',
       });
     }
 
     const missedTrackers: { [hash: string]: { error: string; data: Partial<Tracker> } } = {};
-    for (const [hash] of Object.entries(trackers)) {
+    for (const tracker of trackers) {
+      const { url, website, id: hash, user } = tracker;
       try {
-        const { url, website, currentPrice, recentPrice } = await trackerUtils.track(hash);
+        const { currentPrice, recentPrice } = await trackerUtils.track(tracker);
         await bot.api.sendMessage(
-          config.TELEGRAM_CHANNEL,
+          user,
           `🚨 Price changed from ${recentPrice} to ${currentPrice}
         <a href="${url}">This</a> product's price has changed by ${(
             +((currentPrice - recentPrice) / recentPrice) * 100
@@ -80,8 +76,15 @@ app.get('/track', [
 ]);
 
 app.listen(PORT, async () => {
-  console.log(`server running on port::${PORT} 🚀`);
-  await initBot().catch((error: unknown) => {
-    throw new Error('Unable to init Bot:: ' + JSON.stringify(error));
-  });
+  console.log(`Server running on port::${PORT} 🚀`);
+  await bot
+    .start({
+      onStart: () => {
+        console.log('Bot Initialized');
+      },
+      drop_pending_updates: true,
+    })
+    .catch((error: unknown) => {
+      throw new Error('Unable to init Bot:: ' + JSON.stringify(error));
+    });
 });
