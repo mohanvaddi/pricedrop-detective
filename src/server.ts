@@ -33,11 +33,7 @@ app.get('/track', [
         const { currentPrice, recentPrice } = await trackerUtils.track(tracker);
         await bot.api.sendMessage(
           user,
-          `🚨 Price changed from ${recentPrice} to ${currentPrice}
-        <a href="${url}">This</a> product's price has changed by ${(
-            +((currentPrice - recentPrice) / recentPrice) * 100
-          ).toFixed(2)}%
-        `,
+          `🚨 Price changed from ${recentPrice} to ${currentPrice}\n<a href="${url}">This</a> product's price has changed by ${(+((currentPrice - recentPrice) / recentPrice) * 100).toFixed(2)}%`,
           {
             parse_mode: 'HTML',
             reply_markup: {
