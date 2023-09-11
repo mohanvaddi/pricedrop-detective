@@ -1,6 +1,7 @@
 ## pricedrop-detective ([BargainSherlock](https://t.me/MVQ1priceBot))
+
 <p align="center">
-  <img src="https://github.com/mohanvaddi/pricedrop-detective/assets/58596948/fd048cb8-33ac-432b-b94d-e854822ad662" alt="BargainSherlock Logo" width="200">
+  <img src="https://github.com/mohanvaddi/pricedrop-detective/assets/58596948/201cdfa3-a263-4c0e-8afb-25e7499b935f" alt="BargainSherlock Logo" width="200">
 </p>
 
 ## Table of Contents
