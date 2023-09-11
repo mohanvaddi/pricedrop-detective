@@ -26,7 +26,7 @@ bot.command([BOT_COMMANDS.START, BOT_COMMANDS.HELP], async (ctx) => {
     console.error('UNEXPECTED ERROR OCCOURED:: ' + JSON.stringify(error));
   }
   ctx.reply(
-    "Get real-time alerts on price changes and shop smarter with BargainSherlock by your side.\nFor now, I can only track prices from Amazon and Flipkart.\n\n/list\n/create <url> <website>\n/delete <hash>\n\nYou'll receive notification when price changes."
+    "Get real time alerts on price changes and shop smarter with BargainSherlock by your side.\nFor now, I can only track prices from Amazon and Flipkart.\n\n/list\n/create <url> <website>\n/delete <hash>\n\nYou'll receive notification when price changes."
   );
 });
 
