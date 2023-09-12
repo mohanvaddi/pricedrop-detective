@@ -4,7 +4,6 @@ import TrackerUtils from './utils/tracker.utils';
 import bot from './bot';
 import { HttpStatusCode } from 'axios';
 import { CustomError } from './lib/custom.error';
-import { Tracker } from './types/main';
 import SupabaseUtils from './utils/supabse.utils';
 
 const app = express();
@@ -26,49 +25,47 @@ app.get('/track', [
       });
     }
 
-    const missedTrackers: { [hash: string]: { error: string; data: Partial<Tracker> } } = {};
-    for (const tracker of trackers) {
-      const { url, website, id: hash, user } = tracker;
-      try {
-        const { currentPrice, recentPrice } = await trackerUtils.track(tracker);
-        await bot.api.sendMessage(
-          user,
-          `🚨 Price changed from ${recentPrice} to ${currentPrice}\n<a href="${url}">This</a> product's price has changed by ${(
-            +((currentPrice - recentPrice) / recentPrice) * 100
-          ).toFixed(2)}%`,
-          {
-            parse_mode: 'HTML',
-            reply_markup: {
-              inline_keyboard: [
-                [
-                  {
-                    text: <string>website.charAt(0).toUpperCase() + website.slice(1),
-                    url: url,
-                  },
-                ],
-              ],
-            },
-          }
-        );
-      } catch (error) {
-        if (error instanceof CustomError) {
-          missedTrackers[hash] = {
-            error: error.message,
-            data: {
-              website: error.data.website,
-              url: error.data.url,
-            },
-          };
-          continue;
-        }
-        console.error('UNEXPECTED ERROR OCCOURED:: ' + JSON.stringify(error));
-      }
-    }
-
-    return res.status(HttpStatusCode.Ok).send({
+    res.status(HttpStatusCode.Ok).json({
+      message: 'scraping started.',
       data: {
-        missedTrackers,
+        totalTrackers: trackers.length,
       },
+    });
+
+    trackers.forEach(async (tracker) => {
+      const { url, website, id: hash, user } = tracker;
+      const { currentPrice, recentPrice } = await trackerUtils.track(tracker);
+      trackerUtils
+        .track(tracker)
+        .then(async () => {
+          await bot.api.sendMessage(
+            user,
+            `🚨 Price changed from ${recentPrice} to ${currentPrice}\n<a href="${url}">This</a> product's price has changed by ${(
+              +((currentPrice - recentPrice) / recentPrice) * 100
+            ).toFixed(2)}%`,
+            {
+              parse_mode: 'HTML',
+              reply_markup: {
+                inline_keyboard: [
+                  [
+                    {
+                      text: <string>website.charAt(0).toUpperCase() + website.slice(1),
+                      url: url,
+                    },
+                  ],
+                ],
+              },
+            }
+          );
+        })
+        .catch((error) => {
+          if (error instanceof CustomError) {
+            if (error.name !== 'PriceNotChanged') {
+              bot.api.sendMessage(user, `Hash: ${hash}\nError: ${error.message}\nif this error persists recreate tracker using a new working url.`);
+            }
+          }
+          console.error('UNEXPECTED ERROR OCCOURED:: ' + JSON.stringify(error));
+        });
     });
   },
 ]);

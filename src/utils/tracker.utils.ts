@@ -65,7 +65,7 @@ export default class TrackerUtils {
       }
 
       await this.supabase.insertPrice(hash, currentPrice).catch((err) => {
-        return reject(new CustomError('Unable to inser price', 'PriceError', { err }));
+        return reject(new CustomError('Unable to insert price', 'PriceError', { err }));
       });
 
       return resolve({
