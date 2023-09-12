@@ -23,12 +23,15 @@ export default class TrackerUtils {
       let currentPrice: number;
       try {
         currentPrice = await extractPrice(website, url);
+        await this.supabase.insertTracker(hash, userId, url, website);
+        await this.supabase.insertPrice(hash, currentPrice);
       } catch (error) {
-        return reject(new CustomError('Unable to get price for given url', 'PriceNotFound'));
+        if (error instanceof CustomError) {
+          return reject(error);
+        }
+        return reject('Unexpected error:: Unable to get price');
       }
 
-      await this.supabase.insertTracker(hash, userId, url, website);
-      await this.supabase.insertPrice(hash, currentPrice);
       return resolve({ hash, currentPrice });
     });
   };
@@ -55,7 +58,10 @@ export default class TrackerUtils {
       try {
         currentPrice = await extractPrice(website as SUPPORTED_SITES, url);
       } catch (error) {
-        return reject(new CustomError('Unable to get price', 'PriceNotFound', { url, website }));
+        if (error instanceof CustomError) {
+          return reject(error);
+        }
+        return reject('Unexpected error:: Unable to get price');
       }
       const recentPrice: number = prices[prices.length - 1]!.price;
 
