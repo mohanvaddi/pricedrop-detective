@@ -53,7 +53,6 @@ export default class TrackerUtils {
     return new Promise<{ currentPrice: number; recentPrice: number }>(async (resolve, reject) => {
       const { id: hash, url, website } = tracker;
       const prices = await this.supabase.fetchPricesByTracker(tracker.id);
-
       let currentPrice: number;
       try {
         currentPrice = await extractPrice(website as SUPPORTED_SITES, url);
