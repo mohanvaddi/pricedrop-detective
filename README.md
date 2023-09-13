@@ -1,4 +1,4 @@
-## pricedrop-detective ([BargainSherlock](https://t.me/MVQ1priceBot))
+# Pricedrop Detective ([BargainSherlock](https://t.me/MVQ1priceBot))
 
 <p align="center">
   <img src="https://github.com/mohanvaddi/pricedrop-detective/assets/58596948/201cdfa3-a263-4c0e-8afb-25e7499b935f" alt="BargainSherlock Logo" width="200">
@@ -26,7 +26,8 @@
 2. **Add Products:** Use the `/create <url> <website>` command to add products to your tracking list. Provide the product URL and website, and BargainSherlock will start monitoring it for price changes.
 3. **Stay Informed:** Receive real-time updates on price drops and deals.
 4. **Delete Tracker:** Use the `/delete <tracker_hash>` command to customize your alert preferences.
-5. **Help:** Use `/help` to know how to use the bot.
+5. **List Trackers:** Use `/list` to get all your trackers. It will give tracker_hash and product link.
+6. **Help:** Use `/help` to know how to use the bot.
 
 ## Installation
 

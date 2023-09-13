@@ -1,5 +1,5 @@
-import { SUPPORTED_SITES } from '../src/types/enums';
-import TrackerUtils from '../src/utils/tracker.utils';
+import TrackerUtils from '../utils/tracker.utils';
+import { SUPPORTED_SITES } from '../types/enums';
 
 async function main() {
   const tracker = new TrackerUtils();
