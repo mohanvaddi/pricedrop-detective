@@ -9,4 +9,5 @@ export enum BOT_COMMANDS {
   CREATE = 'create',
   DELETE = 'delete',
   LIST = 'list',
+  HISTORY = 'history',
 }
