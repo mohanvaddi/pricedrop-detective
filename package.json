@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "db:gen-types": "npx supabase gen types typescript --project-id xkvhqwufqmaxzxvtdjny > src/types/database.types.ts",
-    "dev": "ts-node-dev --respawn --transpile-only src/server.ts"
+    "db:gen-types": "npx supabase gen types typescript --project-id xkvhqwufqmaxzxvtdjny > types/database.types.ts",
+    "dev": "ts-node-dev --respawn --transpile-only server.ts"
   },
   "keywords": [],
   "author": "",
