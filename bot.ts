@@ -5,6 +5,7 @@ import { BOT_COMMANDS } from './types/enums';
 import TrackerUtils from './utils/tracker.utils';
 import { CustomError } from './lib/custom.error';
 import SupabaseUtils from './utils/supabse.utils';
+import { readableDateTime } from './utils/common.utils';
 
 const bot = new Bot(config.TELEGRAM_BOT_TOKEN);
 const trackerUtils = new TrackerUtils();
@@ -26,7 +27,7 @@ bot.command([BOT_COMMANDS.START, BOT_COMMANDS.HELP], async (ctx) => {
     console.error('UNEXPECTED ERROR OCCOURED:: ' + JSON.stringify(error));
   }
   ctx.reply(
-    "Get real time alerts on price changes and shop smarter with BargainSherlock by your side.\nFor now, I can only track prices from Amazon and Flipkart.\n\n/list\n/create <url> <website>\n/delete <hash>\n\nYou'll receive notification when price changes."
+    "Get real time alerts on price changes and shop smarter with BargainSherlock by your side.\nFor now, he can only track prices from Amazon and Flipkart.\n\n/list\n/create <url> <website>\n/delete <hash>\n/history <hash>\n\nYou'll receive notification when price changes."
   );
 });
 
@@ -89,6 +90,27 @@ bot.command(BOT_COMMANDS.LIST, async (ctx) => {
         },
       });
     }
+  } catch (error) {
+    if (error instanceof CustomError) {
+      return ctx.reply(error.message);
+    }
+    console.error('UNEXPECTED ERROR OCCOURED:: ' + JSON.stringify(error));
+  }
+});
+
+bot.command(BOT_COMMANDS.HISTORY, async (ctx) => {
+  const hash = ctx.match.trim();
+  if (hash === '') {
+    return ctx.reply('Please send a valid tracker hash');
+  }
+
+  try {
+    const prices = await supabase.fetchPricesByTracker(hash);
+    let pricesStr = '';
+    prices.forEach(({ created_at, price }) => {
+      pricesStr += `${readableDateTime(created_at)}   -->  ${price}\n`;
+    });
+    return ctx.reply(`Price History for ${hash}\n\n` + pricesStr);
   } catch (error) {
     if (error instanceof CustomError) {
       return ctx.reply(error.message);
