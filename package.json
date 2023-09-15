@@ -1,14 +1,14 @@
 {
-  "name": "pricedrop-bot",
+  "name": "pricedrop-detective",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "🚀 Real-time price tracking for your favorite products.",
+  "main": "server.js",
   "scripts": {
     "db:gen-types": "npx supabase gen types typescript --project-id xkvhqwufqmaxzxvtdjny > types/database.types.ts",
     "dev": "ts-node-dev --respawn --transpile-only server.ts"
   },
   "keywords": [],
-  "author": "",
+  "author": "mohanvaddi",
   "license": "ISC",
   "dependencies": {
     "@supabase/supabase-js": "^2.33.1",
