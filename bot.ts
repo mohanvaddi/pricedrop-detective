@@ -27,7 +27,7 @@ bot.command([BOT_COMMANDS.START, BOT_COMMANDS.HELP], async (ctx) => {
     console.error('UNEXPECTED ERROR OCCOURED:: ' + JSON.stringify(error));
   }
   ctx.reply(
-    "Get real time alerts on price changes and shop smarter with BargainSherlock by your side.\nFor now, he can only track prices from Amazon and Flipkart.\n\n/list\n/create <url> <website>\n/delete <hash>\n/history <hash>\n\nYou'll receive notification when price changes."
+    "Get real time alerts on price changes and shop smarter with BargainSherlock by your side.\nFor now, It can only track prices from Amazon and Flipkart.\n\n/list\n/create <url> <website>\n/delete <hash>\n/history <hash>\n\nYou'll receive notification when price changes."
   );
 });
 
@@ -57,7 +57,7 @@ bot.command(BOT_COMMANDS.CREATE, async (ctx) => {
 bot.command(BOT_COMMANDS.DELETE, async (ctx) => {
   const hash = ctx.match.trim();
   if (hash === '') {
-    return ctx.reply('Please send a valid tracker hash');
+    return ctx.reply('Please send a valid tracker hash.');
   }
 
   try {
