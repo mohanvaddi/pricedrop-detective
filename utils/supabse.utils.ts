@@ -31,13 +31,14 @@ export default class SupabaseUtils {
     });
   }
 
-  async insertTracker(hash: string, userId: number, url: string, website: SUPPORTED_SITES) {
+  async insertTracker(hash: string, userId: number, url: string, website: SUPPORTED_SITES, title: string | null) {
     return new Promise<string>(async (resolve, reject) => {
       const { error } = await this.client.from('trackers').insert({
         id: hash,
         user: userId,
-        url: url,
-        website: website,
+        url,
+        website,
+        title,
       });
 
       if (error) {

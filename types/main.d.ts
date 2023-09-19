@@ -21,6 +21,7 @@ export interface Tracker {
   id: string;
   url: string;
   user: number;
+  title: string | null;
   website: string;
 }
 

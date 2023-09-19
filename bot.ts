@@ -6,8 +6,6 @@ import TrackerUtils from './utils/tracker.utils';
 import { CustomError } from './lib/custom.error';
 import SupabaseUtils from './utils/supabse.utils';
 import { readableDateTime } from './utils/common.utils';
-import { extractTitle } from './utils/extractor.utils';
-import { Website } from './types/main';
 
 const bot = new Bot(config.TELEGRAM_BOT_TOKEN);
 const trackerUtils = new TrackerUtils();
@@ -29,7 +27,7 @@ bot.command([BOT_COMMANDS.START, BOT_COMMANDS.HELP], async (ctx) => {
     console.error('UNEXPECTED ERROR OCCOURED:: ' + JSON.stringify(error));
   }
   ctx.reply(
-    "Get real time alerts on price changes and shop smarter with BargainSherlock by your side.\nFor now, It can only track prices from Amazon and Flipkart.\n\n/list\n/create <url> <website>\n/delete <hash>\n/history <hash>\n\nYou'll receive notification when price changes."
+    "Get real time alerts on price changes and shop smarter with BargainSherlock by your side.\nFor now, It can only track prices from Amazon and Flipkart.\n\n/list\n/tracker <hash>\n/create <url> <website>\n/delete <hash>\n/history <hash>\n\nYou'll receive notification when price changes."
   );
 });
 
@@ -77,8 +75,8 @@ bot.command(BOT_COMMANDS.LIST, async (ctx) => {
   const userId = ctx.from!.id;
   try {
     const trackers = await supabase.fetchTrackersByUser(userId);
-    for (const { url, website, id } of trackers) {
-      ctx.reply(`hash:${id}\n<a href="${url}">product</a>`, {
+    for (const { url, website, id, title } of trackers) {
+      ctx.reply(`${title ? title : `<a href="${url}">Product url</a>`}\n\n${id}\n`, {
         parse_mode: 'HTML',
         reply_markup: {
           inline_keyboard: [
@@ -121,7 +119,7 @@ bot.command(BOT_COMMANDS.HISTORY, async (ctx) => {
   }
 });
 
-bot.command(BOT_COMMANDS.GET, async (ctx) => {
+bot.command(BOT_COMMANDS.TRACKER, async (ctx) => {
   const hash = ctx.match.trim();
   if (hash === '') {
     return ctx.reply('Please send a valid tracker hash');
@@ -129,12 +127,11 @@ bot.command(BOT_COMMANDS.GET, async (ctx) => {
 
   try {
     const [tracker] = await supabase.fetchTracker(hash);
-    const { url, website } = tracker!;
-    const title = await extractTitle(website as Website, url);
+    const { url, website, title } = tracker!;
 
     const prices = await supabase.fetchPricesByTracker(hash);
     const price = prices[prices.length - 1];
-    return ctx.reply(`${title.trim()}\n${price && price.price ? 'price: ' + price.price : ''}\n\n${hash}\n\n`, {
+    return ctx.reply(`${title ? title : ''}\n${price && price.price ? 'price: ' + price.price : ''}\n\n${hash}\n\n`, {
       reply_markup: {
         inline_keyboard: [
           [

@@ -1,11 +1,13 @@
 import { z } from 'zod';
 import { NewTrackerDTO } from '../schemas/zod.schema';
 import { caluculateHash } from './hash.utils';
-import { extractPrice } from './extractor.utils';
+import { extractData, extractPrice } from './extractor.utils';
 import { CustomError } from '../lib/custom.error';
 import SupabaseUtils from './supabse.utils';
-import { Tracker } from '../types/main';
-import { SUPPORTED_SITES } from '../types/enums';
+import { Tracker, Website } from '../types/main';
+import axios from 'axios';
+import axiosRetry from 'axios-retry';
+import * as cheerio from 'cheerio';
 
 export default class TrackerUtils {
   private supabase = new SupabaseUtils();
@@ -20,10 +22,12 @@ export default class TrackerUtils {
         return reject(new CustomError('Tracker Already Exists', 'TrackerExists'));
       }
 
-      let currentPrice: number;
+      let title: string | null, currentPrice: number;
       try {
-        currentPrice = await extractPrice(website, url);
-        await this.supabase.insertTracker(hash, userId, url, website);
+        const data = await extractData(website, url);
+        title = data.title;
+        currentPrice = data.currentPrice;
+        await this.supabase.insertTracker(hash, userId, url, website, title);
         await this.supabase.insertPrice(hash, currentPrice);
       } catch (error) {
         if (error instanceof CustomError) {
@@ -55,7 +59,11 @@ export default class TrackerUtils {
       const prices = await this.supabase.fetchPricesByTracker(tracker.id);
       let currentPrice: number;
       try {
-        currentPrice = await extractPrice(website as SUPPORTED_SITES, url);
+        const client = axios.create({});
+        axiosRetry(client, { retries: 5 });
+        const { data } = await client.get(url);
+        const $: cheerio.CheerioAPI = cheerio.load(data);
+        currentPrice = await extractPrice(website as Website, $);
       } catch (error) {
         if (error instanceof CustomError) {
           return reject(error);
