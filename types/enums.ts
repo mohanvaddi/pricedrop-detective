@@ -5,9 +5,10 @@ export enum SUPPORTED_SITES {
 
 export enum BOT_COMMANDS {
   START = 'start',
-  HELP = 'HELP',
+  HELP = 'help',
   CREATE = 'create',
   DELETE = 'delete',
   LIST = 'list',
   HISTORY = 'history',
+  TRACKER = 'tracker',
 }

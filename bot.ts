@@ -27,7 +27,7 @@ bot.command([BOT_COMMANDS.START, BOT_COMMANDS.HELP], async (ctx) => {
     console.error('UNEXPECTED ERROR OCCOURED:: ' + JSON.stringify(error));
   }
   ctx.reply(
-    "Get real time alerts on price changes and shop smarter with BargainSherlock by your side.\nFor now, he can only track prices from Amazon and Flipkart.\n\n/list\n/create <url> <website>\n/delete <hash>\n/history <hash>\n\nYou'll receive notification when price changes."
+    "Get real time alerts on price changes and shop smarter with BargainSherlock by your side.\nFor now, It can only track prices from Amazon and Flipkart.\n\n/list\n/tracker <hash>\n/create <url> <website>\n/delete <hash>\n/history <hash>\n\nYou'll receive notification when price changes."
   );
 });
 
@@ -57,7 +57,7 @@ bot.command(BOT_COMMANDS.CREATE, async (ctx) => {
 bot.command(BOT_COMMANDS.DELETE, async (ctx) => {
   const hash = ctx.match.trim();
   if (hash === '') {
-    return ctx.reply('Please send a valid tracker hash');
+    return ctx.reply('Please send a valid tracker hash.');
   }
 
   try {
@@ -75,8 +75,8 @@ bot.command(BOT_COMMANDS.LIST, async (ctx) => {
   const userId = ctx.from!.id;
   try {
     const trackers = await supabase.fetchTrackersByUser(userId);
-    for (const { url, website, id } of trackers) {
-      ctx.reply(`hash:${id}\n<a href="${url}">product</a>`, {
+    for (const { url, website, id, title } of trackers) {
+      ctx.reply(`${title ? title : `<a href="${url}">Product url</a>`}\n\n${id}\n`, {
         parse_mode: 'HTML',
         reply_markup: {
           inline_keyboard: [
@@ -111,6 +111,38 @@ bot.command(BOT_COMMANDS.HISTORY, async (ctx) => {
       pricesStr += `${readableDateTime(created_at)}   -->  ${price}\n`;
     });
     return ctx.reply(`Price History for ${hash}\n\n` + pricesStr);
+  } catch (error) {
+    if (error instanceof CustomError) {
+      return ctx.reply(error.message);
+    }
+    console.error('UNEXPECTED ERROR OCCOURED:: ' + JSON.stringify(error));
+  }
+});
+
+bot.command(BOT_COMMANDS.TRACKER, async (ctx) => {
+  const hash = ctx.match.trim();
+  if (hash === '') {
+    return ctx.reply('Please send a valid tracker hash');
+  }
+
+  try {
+    const [tracker] = await supabase.fetchTracker(hash);
+    const { url, website, title } = tracker!;
+
+    const prices = await supabase.fetchPricesByTracker(hash);
+    const price = prices[prices.length - 1];
+    return ctx.reply(`${title ? title : ''}\n${price && price.price ? 'price: ' + price.price : ''}\n\n${hash}\n\n`, {
+      reply_markup: {
+        inline_keyboard: [
+          [
+            {
+              text: 'View Product on ' + <string>website.charAt(0).toUpperCase() + website.slice(1),
+              url: url,
+            },
+          ],
+        ],
+      },
+    });
   } catch (error) {
     if (error instanceof CustomError) {
       return ctx.reply(error.message);
