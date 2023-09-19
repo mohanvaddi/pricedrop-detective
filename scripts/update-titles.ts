@@ -1,3 +1,7 @@
+/**
+ * this script can be used to update titles for all the trackers.
+ */
+
 import { extractTitle } from '../utils/extractor.utils';
 import SupabaseUtils from '../utils/supabse.utils';
 import axios from 'axios';

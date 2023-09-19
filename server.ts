@@ -69,7 +69,19 @@ const startTrackers = (trackers: Tracker[]) => {
         if (error.name !== 'PriceNotChanged') {
           return bot.api.sendMessage(
             user,
-            `Hash: ${hash}\nError: ${error.message}\nif this error persists recreate tracker using a new working url.`
+            `Hash: ${hash}\nError: ${error.message}\nif this error persists recreate tracker using a new working url.`,
+            {
+              reply_markup: {
+                inline_keyboard: [
+                  [
+                    {
+                      text: 'View Product on ' + <string>website.charAt(0).toUpperCase() + website.slice(1),
+                      url: url,
+                    },
+                  ],
+                ],
+              },
+            }
           );
         }
       }
