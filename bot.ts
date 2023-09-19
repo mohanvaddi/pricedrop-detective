@@ -6,6 +6,8 @@ import TrackerUtils from './utils/tracker.utils';
 import { CustomError } from './lib/custom.error';
 import SupabaseUtils from './utils/supabse.utils';
 import { readableDateTime } from './utils/common.utils';
+import { extractTitle } from './utils/extractor.utils';
+import { Website } from './types/main';
 
 const bot = new Bot(config.TELEGRAM_BOT_TOKEN);
 const trackerUtils = new TrackerUtils();
@@ -111,6 +113,39 @@ bot.command(BOT_COMMANDS.HISTORY, async (ctx) => {
       pricesStr += `${readableDateTime(created_at)}   -->  ${price}\n`;
     });
     return ctx.reply(`Price History for ${hash}\n\n` + pricesStr);
+  } catch (error) {
+    if (error instanceof CustomError) {
+      return ctx.reply(error.message);
+    }
+    console.error('UNEXPECTED ERROR OCCOURED:: ' + JSON.stringify(error));
+  }
+});
+
+bot.command(BOT_COMMANDS.GET, async (ctx) => {
+  const hash = ctx.match.trim();
+  if (hash === '') {
+    return ctx.reply('Please send a valid tracker hash');
+  }
+
+  try {
+    const [tracker] = await supabase.fetchTracker(hash);
+    const { url, website } = tracker!;
+    const title = await extractTitle(website as Website, url);
+
+    const prices = await supabase.fetchPricesByTracker(hash);
+    const price = prices[prices.length - 1];
+    return ctx.reply(`${title.trim()}\n${price && price.price ? 'price: ' + price.price : ''}\n\n${hash}\n\n`, {
+      reply_markup: {
+        inline_keyboard: [
+          [
+            {
+              text: 'View Product on ' + <string>website.charAt(0).toUpperCase() + website.slice(1),
+              url: url,
+            },
+          ],
+        ],
+      },
+    });
   } catch (error) {
     if (error instanceof CustomError) {
       return ctx.reply(error.message);
