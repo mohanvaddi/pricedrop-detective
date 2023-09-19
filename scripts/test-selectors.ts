@@ -1,3 +1,7 @@
+/**
+ * this script can be used to test price and title selectors for given product url and website.
+ */
+
 import TrackerUtils from '../utils/tracker.utils';
 import { SUPPORTED_SITES } from '../types/enums';
 
