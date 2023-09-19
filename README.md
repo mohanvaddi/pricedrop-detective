@@ -14,20 +14,21 @@
 ## Features
 
 - 🚀 Real-time price tracking for your favorite products.
-- 🔔 Customizable price change alerts.
-- 📊 Price history graphs to visualize trends.
+<!-- - 🔔 Customizable price change alerts. -->
 - 💼 Track multiple products simultaneously.
 - 🗂️ Organize and manage your tracked products.
+- 📊 Price history to check trends.
 - 🌟 User-friendly and privacy-conscious.
 
 ## Usage
 
 1. **Getting Started:** Start a chat with [BargainSherlock](https://t.me/MVQ1priceBot) on Telegram.
 2. **Add Products:** Use the `/create <url> <website>` command to add products to your tracking list. Provide the product URL and website, and BargainSherlock will start monitoring it for price changes.
-3. **Stay Informed:** Receive real-time updates on price drops and deals.
-4. **Delete Tracker:** Use the `/delete <tracker_hash>` command to customize your alert preferences.
-5. **List Trackers:** Use `/list` to get all your trackers. It will give tracker_hash and product link.
+3. **List Trackers:** Use `/list` to get all your trackers. It will give tracker_hash and product link.
+4. **Get Tracker:** Use `/tracker <tracker_hash>` to get tracker details.
+5. **Delete Tracker:** Use the `/delete <tracker_hash>` command to customize your alert preferences.
 6. **Help:** Use `/help` to know how to use the bot.
+7. **Stay Informed:** Receive real-time updates on price drops and deals.
 
 ## Installation
 
