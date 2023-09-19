@@ -131,7 +131,7 @@ bot.command(BOT_COMMANDS.TRACKER, async (ctx) => {
 
     const prices = await supabase.fetchPricesByTracker(hash);
     const price = prices[prices.length - 1];
-    return ctx.reply(`${title ? title : ''}\n${price && price.price ? 'price: ' + price.price : ''}\n\n${hash}\n\n`, {
+    return ctx.reply(`${title ? title : ''}\n${price && price.price ? 'price: ' + price.price : ''}\n\n${hash}\nProduct Url: ${url}`, {
       reply_markup: {
         inline_keyboard: [
           [
