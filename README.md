@@ -14,11 +14,11 @@
 ## Features
 
 - 🚀 Real-time price tracking for your favorite products.
-<!-- - 🔔 Customizable price change alerts. -->
 - 💼 Track multiple products simultaneously.
 - 🗂️ Organize and manage your tracked products.
 - 📊 Price history to check trends.
 - 🌟 User-friendly and privacy-conscious.
+<!-- - 🔔 Customizable price change alerts. -->
 
 ## Usage
 
