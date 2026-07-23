@@ -11,5 +11,5 @@ export const generateRandomSalt = (saltLength: number): string => {
 export const caluculateHash = (text: string) => {
   const hash = crypto.createHash('sha256');
   hash.update(text);
-  return hash.digest('hex');
+  return hash.digest('hex').slice(0, 8);
 };

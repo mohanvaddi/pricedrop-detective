@@ -45,6 +45,7 @@ export interface Database {
           url: string
           user: number
           website: string
+          alert_price: number | null
         }
         Insert: {
           created_at?: string
@@ -53,6 +54,7 @@ export interface Database {
           url?: string
           user: number
           website?: string
+          alert_price?: number | null
         }
         Update: {
           created_at?: string
@@ -61,6 +63,7 @@ export interface Database {
           url?: string
           user?: number
           website?: string
+          alert_price?: number | null
         }
         Relationships: [
           {

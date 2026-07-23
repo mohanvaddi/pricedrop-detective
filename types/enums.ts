@@ -1,8 +1,3 @@
-export enum SUPPORTED_SITES {
-  AMAZON = 'amazon',
-  FLIPKART = 'flipkart',
-}
-
 export enum BOT_COMMANDS {
   START = 'start',
   HELP = 'help',
@@ -11,4 +6,5 @@ export enum BOT_COMMANDS {
   LIST = 'list',
   HISTORY = 'history',
   TRACKER = 'tracker',
+  SETALERT = 'setalert',
 }

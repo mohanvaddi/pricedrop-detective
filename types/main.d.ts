@@ -1,8 +1,9 @@
-import { NewTrackerDTO } from '../schemas/zod.schema';
+import { Platform } from '../scrapers/scraper';
 
-export type Website = typeof NewTrackerDTO._type.website;
+// Platform is the union of keys from scrapers/selectors.json
+export type { Platform as Website };
 
-export type CustomError = {
+export type CustomErrorType = {
   error: true;
   message: string;
   name: string;
@@ -10,12 +11,11 @@ export type CustomError = {
 
 export interface TrackedResults {
   url: string;
-  website: Website;
+  website: Platform;
   currentPrice: number;
   recentPrice: number;
 }
 
-// extracted types
 export interface Tracker {
   created_at: string;
   id: string;
@@ -23,6 +23,7 @@ export interface Tracker {
   user: number;
   title: string | null;
   website: string;
+  alert_price: number | null;
 }
 
 export interface User {

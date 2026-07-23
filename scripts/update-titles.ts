@@ -2,36 +2,24 @@
  * this script can be used to update titles for all the trackers.
  */
 
-import { extractTitle } from '../utils/extractor.utils';
-import SupabaseUtils from '../utils/supabse.utils';
-import axios from 'axios';
-import axiosRetry from 'axios-retry';
-import * as cheerio from 'cheerio';
-import { Website } from '../types/main';
-
-const supabase = new SupabaseUtils();
+import { extractTitle, fetchPage } from '../scrapers/scraper';
+import { findAllTrackers } from '../repositories/tracker.repository';
+import { updateTrackerTitle } from '../repositories/tracker.repository';
+import { Platform } from '../scrapers/scraper';
 
 async function main() {
-  const trackers = await supabase.fetchTrackers();
-  trackers.forEach(async ({ url, website, id: hash }) => {
-    const client = axios.create({});
-    axiosRetry(client, { retries: 5 });
-    const { data } = await client.get(url);
-    const $: cheerio.CheerioAPI = cheerio.load(data);
-    const title = await extractTitle(website as Website, $);
+  const trackers = await findAllTrackers();
+  for (const { url, website, id: hash } of trackers) {
+    const $ = await fetchPage(url);
+    const title = extractTitle(website as Platform, $);
 
     if (title) {
       console.log('Title:: ', title);
-      await supabase.client
-        .from('trackers')
-        .update({
-          title: title.trim(),
-        })
-        .eq('id', hash);
+      await updateTrackerTitle(hash, title.trim());
     } else {
       console.error('Unable to fetch title:: ' + hash);
     }
-  });
+  }
 }
 
 main().catch((error) => {

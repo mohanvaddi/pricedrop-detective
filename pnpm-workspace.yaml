@@ -1,0 +1,2 @@
+allowBuilds:
+  supabase: set this to true or false
