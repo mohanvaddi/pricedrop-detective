@@ -1,2 +1,3 @@
 allowBuilds:
-  supabase: set this to true or false
+  supabase: true
+  unrs-resolver: true
