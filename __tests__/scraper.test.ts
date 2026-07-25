@@ -6,7 +6,7 @@
  *   - a positive integer price is extracted
  *   - a non-empty title string is extracted
  *
- * These tests require an internet connection and will be slower than
+ * These tests require an internet ccoonnection and will be slower than
  * unit tests (~5-15s each). They run as part of the pre-commit hook so
  * that broken selectors are caught before code lands in the repo.
  *
@@ -16,8 +16,8 @@
  */
 
 import testUrls from '../tests.json';
-import { scrape, fetchPage, Platform } from '../scrapers/scraper';
-import { detectPlatform } from '../schemas/zod.schema';
+import { scrape, fetchPage, Platform } from '../scraper';
+import { detectPlatform } from '../constants/schema';
 
 // Minimum page size (bytes) below which we assume bot-detection kicked in
 const MIN_REAL_PAGE_BYTES = 20_000;
@@ -44,6 +44,7 @@ describe('Scraper — live product pages', () => {
     }
 
     const { currentPrice, title } = await scrape(platform, url);
+    console.log(`Scraped ${platform} — Price: ${currentPrice}, Title: "${title}"`);
 
     // Price must be a positive integer
     expect(typeof currentPrice).toBe('number');

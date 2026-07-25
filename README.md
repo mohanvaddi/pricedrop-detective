@@ -42,3 +42,31 @@ Here's how you can get involved:
 - Report bugs or suggest new features by opening GitHub Issues.
 - Contribute code by forking the repository and submitting a pull request.
 - Help improve the documentation by submitting changes to this README or other documentation files.
+
+
+pricedrop-detective/
+├── bot/
+│   ├── index.ts          ← bot setup + command registration
+│   └── commands.ts       ← all command handlers in one file
+├── db/
+│   ├── client.ts         ← supabase client
+│   ├── database.types.ts ← auto-generated (pnpm db:gen-types)
+│   ├── trackers.ts       ← tracker queries
+│   ├── prices.ts         ← price queries
+│   └── users.ts          ← user queries
+├── services/
+│   ├── tracker.ts        ← tracker logic
+│   └── user.ts           ← user logic
+├── scraper/
+│   ├── index.ts          ← scraping + price/title extraction
+│   └── selectors.json    ← CSS selectors per platform
+├── constants/
+│   ├── enums.ts          ← BOT_COMMANDS enum
+│   ├── error.ts          ← CustomError class
+│   ├── schema.ts         ← Zod schemas + detectPlatform
+│   ├── types.ts          ← Tracker, User, Price interfaces
+│   └── utils.ts          ← hash, date helpers
+├── scripts/              ← misc. scripts
+├── migrations/           ← db migrations
+├── server.ts             ← Express app
+└── config.ts

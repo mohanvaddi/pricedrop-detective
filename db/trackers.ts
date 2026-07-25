@@ -1,7 +1,7 @@
-import { supabase } from './supabase.client';
-import { Tracker } from '../types/main';
-import { CustomError } from '../lib/custom.error';
-import { Platform } from '../scrapers/scraper';
+import { supabase } from './client';
+import { Tracker } from '../constants/types';
+import { CustomError } from '../constants/error';
+import { Platform } from '../scraper';
 
 export async function findTracker(hash: string): Promise<Tracker | null> {
   const { data, error } = await supabase.from('trackers').select().eq('id', hash).maybeSingle();

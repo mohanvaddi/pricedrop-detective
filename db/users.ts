@@ -1,6 +1,6 @@
-import { supabase } from './supabase.client';
-import { User } from '../types/main';
-import { CustomError } from '../lib/custom.error';
+import { supabase } from './client';
+import { User } from '../constants/types';
+import { CustomError } from '../constants/error';
 
 export async function findUser(userId: number): Promise<User | null> {
   const { data, error } = await supabase.from('users').select().eq('id', userId).maybeSingle();

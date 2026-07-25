@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import selectorsConfig from '../scrapers/selectors.json';
-import { Platform } from '../scrapers/scraper';
+import selectorsConfig from '../scraper/selectors.json';
+import { Platform } from '../scraper';
 
 // Supported platforms are derived from selectors.json — add a new platform there, not here.
 const platforms = Object.keys(selectorsConfig) as [string, ...string[]];

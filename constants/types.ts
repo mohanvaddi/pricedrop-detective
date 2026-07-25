@@ -1,6 +1,5 @@
-import { Platform } from '../scrapers/scraper';
+import { Platform } from '../scraper';
 
-// Platform is the union of keys from scrapers/selectors.json
 export type { Platform as Website };
 
 export type CustomErrorType = {

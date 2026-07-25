@@ -1,6 +1,6 @@
-import { supabase } from './supabase.client';
-import { Price } from '../types/main';
-import { CustomError } from '../lib/custom.error';
+import { supabase } from './client';
+import { Price } from '../constants/types';
+import { CustomError } from '../constants/error';
 
 export async function findPricesByTracker(hash: string): Promise<Price[]> {
   const { data, error } = await supabase

@@ -2,10 +2,10 @@
  * this script can be used to update titles for all the trackers.
  */
 
-import { extractTitle, fetchPage } from '../scrapers/scraper';
-import { findAllTrackers } from '../repositories/tracker.repository';
-import { updateTrackerTitle } from '../repositories/tracker.repository';
-import { Platform } from '../scrapers/scraper';
+import { extractTitle, fetchPage } from '../scraper';
+import { findAllTrackers } from '../db/trackers';
+import { updateTrackerTitle } from '../db/trackers';
+import { Platform } from '../scraper';
 
 async function main() {
   const trackers = await findAllTrackers();

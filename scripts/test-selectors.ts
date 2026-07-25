@@ -2,8 +2,8 @@
  * this script can be used to test price and title scraping for a given product URL.
  */
 
-import { createTracker } from '../services/tracker.service';
-import { Platform } from '../scrapers/scraper';
+import { createTracker } from '../services/tracker';
+import { Platform } from '../scraper';
 
 async function main() {
   const resp = await createTracker(5662505850, {

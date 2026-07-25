@@ -1,13 +1,7 @@
 import { Bot } from 'grammy';
 import config from '../config';
-import { BOT_COMMANDS } from '../types/enums';
-import { startCommand } from './commands/start.command';
-import { createCommand } from './commands/create.command';
-import { deleteCommand } from './commands/delete.command';
-import { listCommand } from './commands/list.command';
-import { trackerCommand } from './commands/tracker.command';
-import { historyCommand } from './commands/history.command';
-import { setAlertCommand } from './commands/setalert.command';
+import { BOT_COMMANDS } from '../constants/enums';
+import { startCommand, createCommand, deleteCommand, listCommand, trackerCommand, historyCommand, setAlertCommand } from './commands';
 
 const bot = new Bot(config.TELEGRAM_BOT_TOKEN);
 

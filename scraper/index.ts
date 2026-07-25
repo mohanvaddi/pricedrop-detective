@@ -1,7 +1,7 @@
 import * as cheerio from 'cheerio';
 import axios from 'axios';
 import axiosRetry from 'axios-retry';
-import { CustomError } from '../lib/custom.error';
+import { CustomError } from '../constants/error';
 import selectorsConfig from './selectors.json';
 
 export type Platform = keyof typeof selectorsConfig;

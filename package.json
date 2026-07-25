@@ -4,7 +4,7 @@
   "description": "🚀 Real-time price tracking for your favorite products.",
   "main": "server.js",
   "scripts": {
-    "db:gen-types": "npx supabase gen types typescript --project-id xkvhqwufqmaxzxvtdjny > types/database.types.ts",
+    "db:gen-types": "npx supabase gen types typescript --project-id xkvhqwufqmaxzxvtdjny > db/database.types.ts",
     "dev": "ts-node-dev --respawn --transpile-only server.ts",
     "test": "jest --config jest.config.ts",
     "prepare": "husky"

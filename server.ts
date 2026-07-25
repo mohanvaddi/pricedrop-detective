@@ -2,9 +2,9 @@ import express, { Request, Response } from 'express';
 import bodyParser from 'body-parser';
 import bot from './bot';
 import { HttpStatusCode } from 'axios';
-import { CustomError } from './lib/custom.error';
-import { getAllTrackers, checkPriceChange } from './services/tracker.service';
-import { Tracker } from './types/main';
+import { CustomError } from './constants/error';
+import { getAllTrackers, checkPriceChange } from './services/tracker';
+import { Tracker } from './constants/types';
 
 const app = express();
 const PORT = process.env['PORT'] || 4000;
