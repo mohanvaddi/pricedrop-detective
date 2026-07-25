@@ -1,6 +1,7 @@
 import * as cheerio from 'cheerio';
 import axios from 'axios';
 import axiosRetry from 'axios-retry';
+import { chromium } from 'playwright';
 import { CustomError } from '../constants/error';
 import selectorsConfig from './selectors.json';
 
@@ -16,7 +17,25 @@ function stripHtml(input: string): string {
     .replace(/&[a-zA-Z]+;/g, '');
 }
 
-export async function fetchPage(url: string): Promise<cheerio.CheerioAPI> {
+async function fetchPageWithBrowser(url: string): Promise<cheerio.CheerioAPI> {
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const context = await browser.newContext({
+      userAgent:
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+      locale: 'en-IN',
+      extraHTTPHeaders: { 'Accept-Language': 'en-IN,en;q=0.9' },
+    });
+    const page = await context.newPage();
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
+    const html = await page.content();
+    return cheerio.load(html);
+  } finally {
+    await browser.close();
+  }
+}
+
+async function fetchPageWithAxios(url: string): Promise<cheerio.CheerioAPI> {
   const client = axios.create({
     headers: {
       'User-Agent':
@@ -28,6 +47,14 @@ export async function fetchPage(url: string): Promise<cheerio.CheerioAPI> {
   axiosRetry(client, { retries: 5 });
   const { data } = await client.get<string>(url);
   return cheerio.load(data);
+}
+
+export async function fetchPage(platform: Platform, url: string): Promise<cheerio.CheerioAPI> {
+  const platformConfig = selectorsConfig[platform] as { fetchMethod?: 'browser' | 'axios' } | undefined;
+  if (platformConfig?.fetchMethod === 'browser') {
+    return fetchPageWithBrowser(url);
+  }
+  return fetchPageWithAxios(url);
 }
 
 /**
@@ -55,11 +82,56 @@ function extractFromFlipkartJSON($: cheerio.CheerioAPI): { price: number | null;
   return { price, title };
 }
 
+/**
+ * Generic JSON extraction for platforms that embed product data in server-rendered HTML.
+ * Driven entirely by `jsonExtraction` in selectors.json — no platform-specific code needed.
+ *
+ * - source "html": searches the full page HTML
+ * - source "<css-selector>": searches only the text of the matched script element
+ * - priceFields: JSON numeric field names tried in order (first positive match wins)
+ * - titleFields: JSON string field names tried in order (first non-empty match wins)
+ */
+function extractFromJSONConfig(
+  platform: Platform,
+  $: cheerio.CheerioAPI,
+): { price: number | null; title: string | null } {
+  type JSONExtractionConfig = { source: string; priceFields: string[]; titleFields: string[] };
+  const cfg = (selectorsConfig[platform] as { jsonExtraction?: JSONExtractionConfig }).jsonExtraction;
+  if (!cfg) return { price: null, title: null };
+
+  const text = cfg.source === 'html' ? $.html() : ($(`${cfg.source}`).html() ?? '');
+
+  let price: number | null = null;
+  for (const field of cfg.priceFields) {
+    const m = text.match(new RegExp(`"${field}":(\\d+)`));
+    if (m) { price = parseInt(m[1]!, 10); break; }
+  }
+
+  let title: string | null = null;
+  for (const field of cfg.titleFields) {
+    const m = text.match(new RegExp(`"${field}":"((?:[^"\\\\]|\\\\.)*)"`));
+    if (m) {
+      title = m[1]!.replace(/\\u([\dA-Fa-f]{4})/g, (_, hex: string) => String.fromCharCode(parseInt(hex, 16)));
+      break;
+    }
+  }
+
+  return { price, title };
+}
+
 export function extractPrice(platform: Platform, $: cheerio.CheerioAPI): number {
   // Flipkart: prefer JSON extraction — CSS class names are unstable
   if (platform === 'flipkart') {
     const { price } = extractFromFlipkartJSON($);
     if (price !== null && price > 0) return price;
+  }
+
+  // Config-driven JSON extraction (e.g. Myntra) — no price CSS selectors needed
+  const cfg = (selectorsConfig[platform] as { jsonExtraction?: unknown }).jsonExtraction;
+  if (cfg) {
+    const { price } = extractFromJSONConfig(platform, $);
+    if (price !== null && price > 0) return price;
+    throw new CustomError('Unable to extract price', 'PriceNotFound');
   }
 
   const selectors = selectorsConfig[platform]?.price;
@@ -87,6 +159,13 @@ export function extractTitle(platform: Platform, $: cheerio.CheerioAPI): string 
     if (title) return title;
   }
 
+  // Config-driven JSON extraction (e.g. Myntra) — no title CSS selectors needed
+  const cfg = (selectorsConfig[platform] as { jsonExtraction?: unknown }).jsonExtraction;
+  if (cfg) {
+    const { title } = extractFromJSONConfig(platform, $);
+    return title;
+  }
+
   const selectors = selectorsConfig[platform]?.title;
   if (!selectors) return null;
 
@@ -101,7 +180,7 @@ export function extractTitle(platform: Platform, $: cheerio.CheerioAPI): string 
 }
 
 export async function scrape(platform: Platform, url: string): Promise<{ currentPrice: number; title: string | null }> {
-  const $ = await fetchPage(url);
+  const $ = await fetchPage(platform, url);
   const currentPrice = extractPrice(platform, $);
   const title = extractTitle(platform, $);
   return { currentPrice, title };

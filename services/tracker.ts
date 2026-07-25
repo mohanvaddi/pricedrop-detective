@@ -57,7 +57,7 @@ export async function checkPriceChange(tracker: Tracker): Promise<{ currentPrice
   if (!latestPrice) throw new CustomError("Price didn't change", 'PriceNotChanged', { url, website });
   const recentPrice = latestPrice.price;
 
-  const $ = await fetchPage(url);
+  const $ = await fetchPage(website as Platform, url);
   const currentPrice = extractPrice(website as Platform, $);
 
   if (currentPrice === recentPrice) {

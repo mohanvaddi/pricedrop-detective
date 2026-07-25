@@ -10,7 +10,7 @@ import { Platform } from '../scraper';
 async function main() {
   const trackers = await findAllTrackers();
   for (const { url, website, id: hash } of trackers) {
-    const $ = await fetchPage(url);
+    const $ = await fetchPage(website as Platform, url);
     const title = extractTitle(website as Platform, $);
 
     if (title) {

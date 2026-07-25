@@ -6,30 +6,29 @@
  *   - a positive integer price is extracted
  *   - a non-empty title string is extracted
  *
- * These tests require an internet ccoonnection and will be slower than
+ * These tests require an internet connection and will be slower than
  * unit tests (~5-15s each). They run as part of the pre-commit hook so
  * that broken selectors are caught before code lands in the repo.
  *
- * NOTE: Amazon blocks scraping from datacenter / CI IPs. Tests for
- * Amazon URLs are skipped automatically when bot-detection is detected
- * (page size < 20KB). Run from your local machine to test Amazon URLs.
+ * Scraping method per platform is driven by the `fetchMethod` field in
+ * selectors.json. Browser-based platforms (e.g. Amazon) use Playwright
+ * and are never bot-blocked, so no skip logic is applied to them.
+ * Axios-based platforms (e.g. Flipkart) skip gracefully if bot-detection
+ * is triggered (page size < 20KB).
  */
 
 import testUrls from '../tests.json';
 import { scrape, fetchPage, Platform } from '../scraper';
 import { detectPlatform } from '../constants/schema';
+import selectorsConfig from '../scraper/selectors.json';
 
-// Minimum page size (bytes) below which we assume bot-detection kicked in
+type SelectorConfig = { fetchMethod?: 'browser' | 'axios'; price: string[]; title: string[] };
+
+// Minimum page size (bytes) below which we assume bot-detection kicked in for axios scraping
 const MIN_REAL_PAGE_BYTES = 20_000;
 
-async function isPageBlocked(url: string): Promise<boolean> {
-  try {
-    const $ = await fetchPage(url);
-    const html = $.html();
-    return html.length < MIN_REAL_PAGE_BYTES;
-  } catch {
-    return true;
-  }
+function getFetchMethod(platform: Platform): 'browser' | 'axios' {
+  return (selectorsConfig[platform] as SelectorConfig)?.fetchMethod ?? 'axios';
 }
 
 describe('Scraper — live product pages', () => {
@@ -37,14 +36,26 @@ describe('Scraper — live product pages', () => {
     const platform = detectPlatform(url) as Platform;
     expect(platform).not.toBeNull();
 
-    // Skip gracefully when the platform blocks headless requests (e.g. Amazon on datacenter IPs)
-    if (await isPageBlocked(url)) {
-      console.warn(`[SKIP] Bot-detection triggered for ${platform} — run from a local machine to test this URL.`);
-      return;
+    const fetchMethod = getFetchMethod(platform);
+
+    // Browser-based platforms use Playwright — bot-detection doesn't apply
+    // Axios-based platforms may get blocked; skip gracefully if so
+    if (fetchMethod === 'axios') {
+      let html = '';
+      try {
+        const $ = await fetchPage(platform, url);
+        html = $.html();
+      } catch {
+        // fetch failed — treat as blocked
+      }
+      if (html.length < MIN_REAL_PAGE_BYTES) {
+        console.warn(`[SKIP] Bot-detection triggered for ${platform} — page too small (${html.length} bytes)`);
+        return;
+      }
     }
 
     const { currentPrice, title } = await scrape(platform, url);
-    console.log(`Scraped ${platform} — Price: ${currentPrice}, Title: "${title}"`);
+    console.log(`[${fetchMethod}] Scraped ${platform} — Price: ${currentPrice}, Title: "${title}"`);
 
     // Price must be a positive integer
     expect(typeof currentPrice).toBe('number');
