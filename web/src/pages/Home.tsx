@@ -62,7 +62,7 @@ export default function HomePage() {
           Free price tracking — no credit card needed
         </div>
 
-        <h1 className="text-5xl sm:text-6xl font-extrabold tracking-tight leading-tight">
+        <h1 className="text-5xl sm:text-6xl font-extrabold tracking-tight" style={{ lineHeight: 1.08 }}>
           Stop Overpaying.
           <br />
           <span className="text-primary">Start Saving.</span>
