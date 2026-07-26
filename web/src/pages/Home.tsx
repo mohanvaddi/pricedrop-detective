@@ -92,11 +92,13 @@ export default function HomePage() {
               </Button>
             </Link>
           ) : (
-            <Link to="/register">
-              <Button size="lg" variant="outline" className="gap-2 px-8">
-                Get Started Free <ChevronRight size={16} />
-              </Button>
-            </Link>
+            <div className="strange-ring">
+              <Link to="/register">
+                <Button size="lg" variant="outline" className="gap-2 px-8">
+                  Get Started Free <ChevronRight size={16} />
+                </Button>
+              </Link>
+            </div>
           )}
         </div>
       </section>

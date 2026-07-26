@@ -190,3 +190,41 @@
     cursor: pointer;
   }
 }
+
+/* ── Dr Strange rotating ring around "Get Started" button ── */
+@keyframes strange-rotate {
+  from { --strange-angle: 0deg; }
+  to   { --strange-angle: 360deg; }
+}
+
+@property --strange-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+.strange-ring {
+  position: relative;
+  display: inline-block;
+  padding: 2px;
+  background: conic-gradient(
+    from var(--strange-angle),
+    transparent 0deg,
+    transparent 60deg,
+    var(--primary) 90deg,
+    transparent 120deg,
+    transparent 180deg,
+    transparent 240deg,
+    var(--primary) 270deg,
+    transparent 300deg,
+    transparent 360deg
+  );
+  animation: strange-rotate 2.8s linear infinite;
+}
+
+.strange-ring > * {
+  /* isolate the button so it sits above the gradient bg */
+  position: relative;
+  display: block;
+  background: var(--background);
+}
