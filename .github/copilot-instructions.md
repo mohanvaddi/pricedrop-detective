@@ -1,5 +1,9 @@
 # Copilot Instructions
 
+## Commit Policy
+
+**Never commit code unless the user explicitly says to commit.** Complete all implementation and verification first, then wait for the user to say "commit" or "go ahead and commit" before running any `git commit` command.
+
 ## Dev Commands
 
 ```bash

@@ -3,3 +3,5 @@ allowBuilds:
   bcrypt: true
   supabase: true
   unrs-resolver: true
+minimumReleaseAgeExclude:
+  - lucide-react@1.27.0
