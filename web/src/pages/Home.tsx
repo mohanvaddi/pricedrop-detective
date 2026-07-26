@@ -110,7 +110,7 @@ export default function HomePage() {
         ].map((stat) => (
           <div key={stat.label} className="rounded-2xl border bg-card p-6 shadow-sm">
             <div className="text-3xl font-bold text-primary">{stat.value}</div>
-            <div className="text-sm text-muted-foreground mt-1">{stat.label}</div>
+            <div className="text-smd text-muted-foreground mt-3">{stat.label}</div>
           </div>
         ))}
       </section>
@@ -123,7 +123,7 @@ export default function HomePage() {
             <div key={step.num} className="rounded-2xl border bg-card p-8 space-y-3 shadow-sm text-center">
               <div className="text-4xl font-black text-primary/20">{step.num}</div>
               <h3 className="font-semibold text-lg">{step.title}</h3>
-              <p className="text-muted-foreground text-sm">{step.desc}</p>
+              <p className="text-muted-foreground text-smd">{step.desc}</p>
             </div>
           ))}
         </div>
@@ -139,7 +139,7 @@ export default function HomePage() {
                 <f.icon size={20} className="text-primary" />
               </div>
               <h3 className="font-semibold">{f.title}</h3>
-              <p className="text-muted-foreground text-sm">{f.desc}</p>
+              <p className="text-muted-foreground text-smd">{f.desc}</p>
             </div>
           ))}
         </div>
@@ -147,7 +147,7 @@ export default function HomePage() {
 
       {/* ── Platform logos ── */}
       <section className="text-center space-y-6 pb-8">
-        <p className="text-sm text-muted-foreground uppercase tracking-widest font-medium">Supported platforms</p>
+        <p className="text-smd text-muted-foreground uppercase tracking-widest font-medium">Supported platforms</p>
         <div className="flex flex-wrap justify-center gap-4">
           {[
             { name: 'Amazon', bg: 'bg-orange-50 border-orange-200 text-orange-700' },

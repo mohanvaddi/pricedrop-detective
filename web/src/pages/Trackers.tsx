@@ -71,14 +71,24 @@ function RankBadge({ rank, score }: { rank: number; score: number }) {
 function PriceCell({ label, price, comparePrice }: { label: string; price: number | null | undefined; comparePrice?: number | null }) {
   if (price == null) return <span className="text-muted-foreground text-xs">—</span>;
   let color = '';
-  if (comparePrice != null) {
-    if (price < comparePrice) color = 'text-green-600 font-semibold';
-    else if (price > comparePrice) color = 'text-red-500 font-semibold';
+  let diff: string | null = null;
+  if (comparePrice != null && comparePrice !== price) {
+    const pct = ((price - comparePrice) / comparePrice) * 100;
+    if (price < comparePrice) {
+      color = 'text-green-600 font-semibold';
+      diff = `(${pct.toFixed(1)}%)`;
+    } else {
+      color = 'text-red-500 font-semibold';
+      diff = `(+${pct.toFixed(1)}%)`;
+    }
   }
   return (
     <div className="flex flex-col leading-tight">
       <span className="text-[10px] text-muted-foreground uppercase tracking-wide">{label}</span>
-      <span className={`text-sm ${color}`}>₹{price.toLocaleString('en-IN')}</span>
+      <span className={`text-sm ${color}`}>
+        ₹{price.toLocaleString('en-IN')}
+        {diff && <span className={`ml-1 text-xs ${color}`}>{diff}</span>}
+      </span>
     </div>
   );
 }

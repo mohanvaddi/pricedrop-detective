@@ -108,7 +108,7 @@ export default function SettingsPage() {
             </Button>
           </div>
           {updateNameMutation.isSuccess && (
-            <p className="text-sm text-green-600 flex items-center gap-1"><Check size={13} /> Saved!</p>
+            <p className="text-sm text-primary flex items-center gap-1"><Check size={13} /> Saved!</p>
           )}
         </div>
       </Section>
@@ -125,12 +125,12 @@ export default function SettingsPage() {
           .
         </p>
         {channels?.telegram ? (
-          <div className="flex items-center justify-between rounded-lg border bg-green-50 border-green-200 px-4 py-3">
+          <div className="flex items-center justify-between rounded-lg border bg-primary/10 border-primary/30 px-4 py-3">
             <div>
-              <p className="text-sm font-medium text-green-700 flex items-center gap-1">
+              <p className="text-sm font-medium text-primary flex items-center gap-1">
                 <Check size={14} /> Connected
               </p>
-              <p className="text-xs text-green-600">
+              <p className="text-xs text-muted-foreground">
                 ID: {channels.telegram.telegram_id}
                 {channels.telegram.username && ` (@${channels.telegram.username})`}
               </p>
@@ -177,12 +177,12 @@ export default function SettingsPage() {
           Receive price alerts as Reddit DMs. Enter your Reddit username (without u/).
         </p>
         {channels?.reddit ? (
-          <div className="flex items-center justify-between rounded-lg border bg-green-50 border-green-200 px-4 py-3">
+          <div className="flex items-center justify-between rounded-lg border bg-primary/10 border-primary/30 px-4 py-3">
             <div>
-              <p className="text-sm font-medium text-green-700 flex items-center gap-1">
+              <p className="text-sm font-medium text-primary flex items-center gap-1">
                 <Check size={14} /> Connected
               </p>
-              <p className="text-xs text-green-600">u/{channels.reddit.reddit_username}</p>
+              <p className="text-xs text-muted-foreground">u/{channels.reddit.reddit_username}</p>
             </div>
             <Button
               variant="outline"

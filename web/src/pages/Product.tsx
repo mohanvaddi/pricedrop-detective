@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Area, AreaChart } from 'recharts';
@@ -29,6 +29,36 @@ export default function ProductPage() {
   const queryClient = useQueryClient();
   const [alertOpen, setAlertOpen] = useState(false);
   const [imgErr, setImgErr] = useState(false);
+
+  // Read computed CSS colors so chart SVG elements respect dark/light mode
+  const [chartColors, setChartColors] = useState({
+    primary: '#3b82f6',
+    border: '#e2e8f0',
+    muted: '#64748b',
+    popoverBg: '#ffffff',
+    popoverFg: '#0f172a',
+    foreground: '#0f172a',
+  });
+
+  useEffect(() => {
+    function readColors() {
+      const s = getComputedStyle(document.documentElement);
+      const get = (v: string) => s.getPropertyValue(v).trim();
+      setChartColors({
+        primary: get('--primary'),
+        border: get('--border'),
+        muted: get('--muted-foreground'),
+        popoverBg: get('--popover'),
+        popoverFg: get('--popover-foreground'),
+        foreground: get('--foreground'),
+      });
+    }
+    readColors();
+    // Re-read when dark class toggled on <html>
+    const observer = new MutationObserver(readColors);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
 
   const { data: product, isLoading: productLoading } = useQuery({
     queryKey: ['product', id],
@@ -190,29 +220,45 @@ export default function ProductPage() {
               <AreaChart data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
                 <defs>
                   <linearGradient id="priceGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.15} />
-                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                    <stop offset="5%" stopColor={chartColors.primary} stopOpacity={0.25} />
+                    <stop offset="95%" stopColor={chartColors.primary} stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                <CartesianGrid strokeDasharray="3 3" stroke={chartColors.border} />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 11, fill: chartColors.muted }}
+                  axisLine={{ stroke: chartColors.border }}
+                  tickLine={{ stroke: chartColors.border }}
+                />
                 <YAxis
-                  tick={{ fontSize: 11 }}
+                  tick={{ fontSize: 11, fill: chartColors.muted }}
                   tickFormatter={(v: number) => '₹' + (v / 1000).toFixed(0) + 'k'}
+                  axisLine={{ stroke: chartColors.border }}
+                  tickLine={{ stroke: chartColors.border }}
                   width={60}
                 />
                 <Tooltip
                   formatter={(v) => [fmt(Number(v)), 'Price']}
                   labelFormatter={(_, payload) => payload?.[0]?.payload?.fullDate ?? ''}
-                  contentStyle={{ borderRadius: '8px', fontSize: '13px' }}
+                  contentStyle={{
+                    borderRadius: '8px',
+                    fontSize: '13px',
+                    backgroundColor: chartColors.popoverBg,
+                    borderColor: chartColors.border,
+                    color: chartColors.popoverFg,
+                  }}
+                  labelStyle={{ color: chartColors.muted, marginBottom: '2px' }}
+                  itemStyle={{ color: chartColors.foreground }}
+                  cursor={{ stroke: chartColors.primary, strokeWidth: 1, strokeDasharray: '4 2' }}
                 />
                 <Area
                   type="monotone"
                   dataKey="price"
-                  stroke="hsl(var(--primary))"
+                  stroke={chartColors.primary}
                   strokeWidth={2}
                   fill="url(#priceGrad)"
-                  dot={{ r: 4, fill: 'hsl(var(--primary))' }}
+                  dot={{ r: 4, fill: chartColors.primary }}
                   activeDot={{ r: 6 }}
                 />
               </AreaChart>
