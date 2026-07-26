@@ -1,0 +1,16 @@
+import { Badge } from '@/components/ui/badge';
+
+const PLATFORM_META: Record<string, { label: string; color: string }> = {
+  amazon: { label: 'Amazon', color: 'bg-orange-100 text-orange-800 border-orange-200' },
+  flipkart: { label: 'Flipkart', color: 'bg-blue-100 text-blue-800 border-blue-200' },
+  myntra: { label: 'Myntra', color: 'bg-pink-100 text-pink-800 border-pink-200' },
+};
+
+export function PlatformBadge({ website }: { website: string }) {
+  const meta = PLATFORM_META[website.toLowerCase()] ?? { label: website, color: '' };
+  return (
+    <Badge variant="outline" className={meta.color + ' capitalize font-medium'}>
+      {meta.label}
+    </Badge>
+  );
+}

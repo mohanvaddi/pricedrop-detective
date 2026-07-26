@@ -19,10 +19,11 @@ export default function RegisterPage() {
     const fd = new FormData(e.currentTarget);
     const email = fd.get('email') as string;
     const password = fd.get('password') as string;
+    const displayName = (fd.get('display_name') as string).trim();
     if (password.length < 8) { setError('Password must be at least 8 characters.'); return; }
     setLoading(true);
     try {
-      const { token } = await api.auth.register(email, password);
+      const { token } = await api.auth.register(email, password, displayName || undefined);
       login(token);
       navigate('/dashboard');
     } catch (err) {
@@ -39,11 +40,19 @@ export default function RegisterPage() {
         <CardContent>
           <form onSubmit={(e) => { void handleSubmit(e); }} className="space-y-4">
             <div className="space-y-1">
+              <Label htmlFor="display_name">
+                Display Name <span className="text-muted-foreground text-xs">(optional — shown publicly)</span>
+              </Label>
+              <Input id="display_name" name="display_name" type="text" placeholder="e.g. TechSavvy" />
+            </div>
+            <div className="space-y-1">
               <Label htmlFor="email">Email</Label>
               <Input id="email" name="email" type="email" required />
             </div>
             <div className="space-y-1">
-              <Label htmlFor="password">Password <span className="text-muted-foreground text-xs">(min 8 chars)</span></Label>
+              <Label htmlFor="password">
+                Password <span className="text-muted-foreground text-xs">(min 8 chars)</span>
+              </Label>
               <Input id="password" name="password" type="password" required minLength={8} />
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}

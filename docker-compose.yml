@@ -8,6 +8,8 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql
       - ./migrations/001_initial_schema.sql:/docker-entrypoint-initdb.d/001_initial_schema.sql:ro
+      - ./migrations/002_ui_overhaul.sql:/docker-entrypoint-initdb.d/002_ui_overhaul.sql:ro
+      - ./migrations/003_product_metrics.sql:/docker-entrypoint-initdb.d/003_product_metrics.sql:ro
     ports:
       - '5432:5432'
     healthcheck:
@@ -23,10 +25,33 @@ services:
     env_file:
       - .env
     environment:
-      DATABASE_URL: postgres://postgres:postgres@postgres:5432/pricedrop
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/pricedrop
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -sf http://localhost:4000/health || exit 1']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 45s
+
+  # Runs price-check every 5 minutes by calling the /track endpoint.
+  # The app container handles concurrent scraping internally.
+  # Future: swap this container for a job-queue dispatcher (Bull/BullMQ)
+  # to enable worker-thread level parallelism without changing the app service.
+  cron:
+    image: alpine:3.19
+    entrypoint: ['/bin/sh', '-c']
+    command:
+      - |
+        apk add --no-cache curl
+        echo '*/5 * * * * curl -sf http://app:4000/track >> /proc/1/fd/1 2>&1' | crontab -
+        exec crond -f -d 8
+    depends_on:
+      app:
+        condition: service_healthy
+    restart: unless-stopped
 
 volumes:
   postgres_data:

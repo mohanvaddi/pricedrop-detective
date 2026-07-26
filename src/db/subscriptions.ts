@@ -23,12 +23,15 @@ export async function findSubscriptionsByUser(userId: string): Promise<Subscript
   }
 }
 
-export async function findSubscribersForProduct(productId: string): Promise<{ user_id: string; alert_price: number | null; channel: 'telegram' | 'reddit' | 'web'; channel_id: string | number }[]> {
+export async function findSubscribersForProduct(
+  productId: string,
+): Promise<{ user_id: string; alert_price: number | null; notify_every_change: boolean; channel: 'telegram' | 'reddit' | 'web'; channel_id: string | number }[]> {
   try {
-    const { rows } = await pool.query<{ user_id: string; alert_price: number | null; channel: 'telegram' | 'reddit' | 'web'; channel_id: string | number }>(
+    const { rows } = await pool.query<{ user_id: string; alert_price: number | null; notify_every_change: boolean; channel: 'telegram' | 'reddit' | 'web'; channel_id: string | number }>(
       `SELECT
          s.user_id,
          s.alert_price,
+         s.notify_every_change,
          CASE
            WHEN tu.telegram_id IS NOT NULL THEN 'telegram'
            WHEN ru.reddit_username IS NOT NULL THEN 'reddit'
@@ -48,13 +51,17 @@ export async function findSubscribersForProduct(productId: string): Promise<{ us
   }
 }
 
-export async function insertSubscription(userId: string, productId: string, alertPrice?: number): Promise<void> {
+export async function insertSubscription(
+  userId: string,
+  productId: string,
+  alertPrice?: number,
+  notifyEveryChange?: boolean,
+): Promise<void> {
   try {
-    await pool.query('INSERT INTO subscriptions (user_id, product_id, alert_price) VALUES ($1, $2, $3)', [
-      userId,
-      productId,
-      alertPrice ?? null,
-    ]);
+    await pool.query(
+      'INSERT INTO subscriptions (user_id, product_id, alert_price, notify_every_change) VALUES ($1, $2, $3, $4)',
+      [userId, productId, alertPrice ?? null, notifyEveryChange ?? true],
+    );
   } catch (error) {
     throw new CustomError('Unable to add subscription', 'SubscriptionInsertionFailed', { error });
   }
@@ -68,13 +75,24 @@ export async function deleteSubscription(userId: string, productId: string): Pro
   }
 }
 
-export async function setAlertPrice(userId: string, productId: string, alertPrice: number | null): Promise<void> {
+export async function setAlertPrice(
+  userId: string,
+  productId: string,
+  alertPrice: number | null,
+  notifyEveryChange?: boolean,
+): Promise<void> {
   try {
-    await pool.query('UPDATE subscriptions SET alert_price = $1 WHERE user_id = $2 AND product_id = $3', [
-      alertPrice,
-      userId,
-      productId,
-    ]);
+    if (notifyEveryChange !== undefined) {
+      await pool.query(
+        'UPDATE subscriptions SET alert_price = $1, notify_every_change = $2 WHERE user_id = $3 AND product_id = $4',
+        [alertPrice, notifyEveryChange, userId, productId],
+      );
+    } else {
+      await pool.query(
+        'UPDATE subscriptions SET alert_price = $1 WHERE user_id = $2 AND product_id = $3',
+        [alertPrice, userId, productId],
+      );
+    }
   } catch (error) {
     throw new CustomError('Unable to set alert price', 'SubscriptionUpdateError', { error });
   }

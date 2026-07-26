@@ -59,16 +59,15 @@ export async function findOrCreateRedditUser(redditUsername: string): Promise<st
   }
 }
 
-/** Create a web user (email + password). Returns the abstract user UUID. */
-export async function createWebUser(email: string, passwordHash: string): Promise<string> {
+/** Create a web user (email + password + optional display name). Returns the abstract user UUID. */
+export async function createWebUser(email: string, passwordHash: string, displayName?: string): Promise<string> {
   try {
     const { rows } = await pool.query<{ id: string }>('INSERT INTO users DEFAULT VALUES RETURNING id');
     const userId = rows[0]!.id;
-    await pool.query('INSERT INTO web_users (user_id, email, password_hash) VALUES ($1, $2, $3)', [
-      userId,
-      email,
-      passwordHash,
-    ]);
+    await pool.query(
+      'INSERT INTO web_users (user_id, email, password_hash, display_name) VALUES ($1, $2, $3, $4)',
+      [userId, email, passwordHash, displayName?.trim() ?? null],
+    );
     return userId;
   } catch (error) {
     throw new CustomError('Unable to create web user', 'UserInsertionFailed', { error });

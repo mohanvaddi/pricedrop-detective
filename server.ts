@@ -6,11 +6,12 @@ import { HttpStatusCode } from 'axios';
 import { CustomError } from './constants/error';
 import { getAllActiveProducts, checkPriceChange } from './src/services/tracker';
 import { findSubscribersForProduct } from './src/db/subscriptions';
-import { Product } from './constants/types';
+import { EnrichedProduct } from './constants/types';
 import config from './config';
 import authRouter from './src/api/routes/auth';
 import productsRouter from './src/api/routes/products';
 import subscriptionsRouter from './src/api/routes/subscriptions';
+import { usersRouter } from './src/api/routes/users';
 
 const REDDIT_ENABLED = Boolean(config.REDDIT_CLIENT_ID && config.REDDIT_USERNAME);
 
@@ -23,6 +24,11 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use('/api/auth', authRouter);
 app.use('/api/products', productsRouter);
 app.use('/api/subscriptions', subscriptionsRouter);
+app.use('/api/users', usersRouter);
+
+app.get('/health', (_req: Request, res: Response) => {
+  res.status(200).json({ ok: true });
+});
 
 app.get('/track', async (_req: Request, res: Response) => {
   const products = await getAllActiveProducts();
@@ -39,7 +45,7 @@ app.get('/track', async (_req: Request, res: Response) => {
   startTrackers(products);
 });
 
-const startTrackers = (products: Product[]) => {
+const startTrackers = (products: EnrichedProduct[]) => {
   products.forEach(async (product) => {
     const { url, website, id: productId, title } = product;
 
@@ -47,8 +53,13 @@ const startTrackers = (products: Product[]) => {
       const { currentPrice, recentPrice } = await checkPriceChange(product);
       const subscribers = await findSubscribersForProduct(productId);
 
-      for (const { user_id: _userId, alert_price, channel, channel_id } of subscribers) {
-        if (alert_price !== null && currentPrice > alert_price) continue;
+      for (const { user_id: _userId, alert_price, notify_every_change, channel, channel_id } of subscribers) {
+        // Decide whether to notify this subscriber:
+        // - notify_every_change = true  → always notify on any price movement
+        // - notify_every_change = false → only notify when price drops at or below alert_price
+        if (!notify_every_change) {
+          if (alert_price === null || currentPrice > alert_price) continue;
+        }
 
         const isPriceDrop = currentPrice < recentPrice;
         const emoji = isPriceDrop ? '📉' : '📈';

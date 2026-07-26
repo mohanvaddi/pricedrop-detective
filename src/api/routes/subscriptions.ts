@@ -52,10 +52,10 @@ router.delete('/:productId', async (req: AuthRequest, res: Response): Promise<vo
 });
 
 router.patch('/:productId/alert', async (req: AuthRequest, res: Response): Promise<void> => {
-  const { alertPrice } = req.body as { alertPrice?: number | null };
+  const { alertPrice, notifyEveryChange } = req.body as { alertPrice?: number | null; notifyEveryChange?: boolean };
   try {
-    await setTrackerAlert(req.params['productId']! as string, req.userId!, alertPrice ?? null);
-    res.status(200).json({ message: 'Alert price updated.' });
+    await setTrackerAlert(req.params['productId']! as string, req.userId!, alertPrice ?? null, notifyEveryChange);
+    res.status(200).json({ message: 'Alert updated.' });
   } catch (error) {
     if (error instanceof CustomError) {
       res.status(404).json({ error: error.message });

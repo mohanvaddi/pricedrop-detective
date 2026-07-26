@@ -4,7 +4,7 @@ import * as SubscriptionDB from '../db/subscriptions';
 import * as PriceDB from '../db/prices';
 import { scrape, canonicalizeUrl, Platform } from '../scraper';
 import { CustomError } from '../../constants/error';
-import { Product, Subscription } from '../../constants/types';
+import { Product, EnrichedProduct, Subscription } from '../../constants/types';
 import { NewTrackerDTO, detectPlatform } from '../constants/schema';
 import { caluculateHash } from '../constants/utils';
 
@@ -42,16 +42,16 @@ export async function createTracker(
     if (existingSub) throw new CustomError('Tracker Already Exists', 'TrackerExists');
 
     // Product exists but this user isn't subscribed yet — subscribe without re-scraping
-    await SubscriptionDB.insertSubscription(userId, hash);
+    await SubscriptionDB.insertSubscription(userId, hash, body.alertPrice, body.notifyEveryChange);
     const latestPrice = await PriceDB.findLatestPrice(hash);
     return { hash, currentPrice: latestPrice?.price ?? 0 };
   }
 
   // New product — scrape, persist, then subscribe
-  const { currentPrice, title } = await scrape(platform, url);
-  await ProductDB.insertProduct(hash, url, platform, title);
+  const { currentPrice, title, thumbnailUrl } = await scrape(platform, url);
+  await ProductDB.insertProduct(hash, url, platform, title, thumbnailUrl);
   await PriceDB.insertPrice(hash, currentPrice);
-  await SubscriptionDB.insertSubscription(userId, hash);
+  await SubscriptionDB.insertSubscription(userId, hash, body.alertPrice, body.notifyEveryChange);
 
   return { hash, currentPrice };
 }
@@ -79,13 +79,18 @@ export async function checkPriceChange(product: Product): Promise<{ currentPrice
   return { recentPrice, currentPrice };
 }
 
-export async function setTrackerAlert(hash: string, userId: string, alertPrice: number | null): Promise<void> {
+export async function setTrackerAlert(
+  hash: string,
+  userId: string,
+  alertPrice: number | null,
+  notifyEveryChange?: boolean,
+): Promise<void> {
   const subscription = await SubscriptionDB.findSubscription(userId, hash);
   if (!subscription) throw new CustomError('Tracker not found.', 'TrackerNotFound');
-  await SubscriptionDB.setAlertPrice(userId, hash, alertPrice);
+  await SubscriptionDB.setAlertPrice(userId, hash, alertPrice, notifyEveryChange);
 }
 
-export async function getAllActiveProducts(): Promise<Product[]> {
+export async function getAllActiveProducts(): Promise<EnrichedProduct[]> {
   return ProductDB.findAllActiveProducts();
 }
 

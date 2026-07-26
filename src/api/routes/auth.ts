@@ -8,7 +8,7 @@ import config from '../../../config';
 const router = Router();
 
 router.post('/register', async (req: Request, res: Response): Promise<void> => {
-  const { email, password } = req.body as { email?: string; password?: string };
+  const { email, password, display_name } = req.body as { email?: string; password?: string; display_name?: string };
   if (!email || !password || password.length < 8) {
     res.status(400).json({ error: 'Valid email and password (min 8 chars) are required.' });
     return;
@@ -16,7 +16,7 @@ router.post('/register', async (req: Request, res: Response): Promise<void> => {
 
   try {
     const passwordHash = await bcrypt.hash(password, 12);
-    const userId = await createWebUser(email.toLowerCase().trim(), passwordHash);
+    const userId = await createWebUser(email.toLowerCase().trim(), passwordHash, display_name);
     const token = jwt.sign({ sub: userId }, config.JWT_SECRET, { expiresIn: '24h' });
     res.status(201).json({ token });
   } catch (error) {

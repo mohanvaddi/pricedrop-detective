@@ -13,6 +13,8 @@ export const NewTrackerDTO = z.object({
   website: z
     .enum(platformsEnum, { error: `Unsupported website. Supported: ${platformList}` })
     .optional(),
+  alertPrice: z.number().positive().optional(),
+  notifyEveryChange: z.boolean().optional(),
 });
 
 export function detectPlatform(url: string): Platform | null {

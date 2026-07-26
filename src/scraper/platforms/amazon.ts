@@ -36,4 +36,11 @@ export class AmazonScraper extends BaseScraper {
     }
     return null;
   }
+
+  override extractThumbnail($: cheerio.CheerioAPI): string | null {
+    // Amazon main product image
+    const mainImg = $('#landingImage, #imgBlkFront, #main-image').attr('src');
+    if (mainImg) return mainImg;
+    return super.extractThumbnail($);
+  }
 }

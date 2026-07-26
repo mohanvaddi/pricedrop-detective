@@ -56,12 +56,20 @@ export abstract class BaseScraper {
   abstract extractPrice($: cheerio.CheerioAPI): number;
   abstract extractTitle($: cheerio.CheerioAPI): string | null;
 
+  /** Extract a product thumbnail URL from the page (OG image or first product image). */
+  extractThumbnail($: cheerio.CheerioAPI): string | null {
+    const ogImage = $('meta[property="og:image"]').attr('content');
+    if (ogImage) return ogImage;
+    return null;
+  }
+
   /** Template method — orchestrates fetch → extract. */
-  async scrape(url: string): Promise<{ currentPrice: number; title: string | null }> {
+  async scrape(url: string): Promise<{ currentPrice: number; title: string | null; thumbnailUrl: string | null }> {
     const $ = await this.fetchPage(url);
     const currentPrice = this.extractPrice($);
     const title = this.extractTitle($);
-    return { currentPrice, title };
+    const thumbnailUrl = this.extractThumbnail($);
+    return { currentPrice, title, thumbnailUrl };
   }
 
   /** Extract a canonical, stable identifier for the product. Used for deduplication hashing. */

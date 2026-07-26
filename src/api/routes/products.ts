@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { findAllActiveProducts, findProduct } from '../../db/products';
+import { findAllActiveProducts, findProduct, incrementViewCount } from '../../db/products';
 import { findPricesByProduct } from '../../db/prices';
 
 const router = Router();
@@ -18,6 +18,8 @@ router.get('/:id', async (req: Request, res: Response): Promise<void> => {
   try {
     const product = await findProduct(req.params['id']! as string);
     if (!product) { res.status(404).json({ error: 'Product not found.' }); return; }
+    // Fire-and-forget view count increment
+    void incrementViewCount(product.id);
     res.json({ data: product });
   } catch (error) {
     console.error('[api/products] get error:', error);

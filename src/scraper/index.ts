@@ -36,6 +36,13 @@ export function extractTitle(platform: Platform, $: cheerio.CheerioAPI): string 
   return resolve(platform).extractTitle($);
 }
 
-export async function scrape(platform: Platform, url: string): Promise<{ currentPrice: number; title: string | null }> {
+export function extractThumbnail(platform: Platform, $: cheerio.CheerioAPI): string | null {
+  return resolve(platform).extractThumbnail($);
+}
+
+export async function scrape(
+  platform: Platform,
+  url: string,
+): Promise<{ currentPrice: number; title: string | null; thumbnailUrl: string | null }> {
   return resolve(platform).scrape(url);
 }
