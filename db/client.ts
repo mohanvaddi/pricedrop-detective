@@ -1,7 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
-import { Database } from './database.types';
+import { Pool } from 'pg';
 import config from '../config';
 
-export const supabase = createClient<Database>(config.SUPABASE_URL, config.SUPABASE_KEY, {
-  auth: { persistSession: false },
-});
+export const pool = new Pool({ connectionString: config.DATABASE_URL });

@@ -3,6 +3,5 @@ config();
 
 export default {
   TELEGRAM_BOT_TOKEN: process.env['TELEGRAM_BOT_TOKEN']!,
-  SUPABASE_URL: process.env['SUPABASE_URL']!,
-  SUPABASE_KEY: process.env['SUPABASE_KEY']!,
+  DATABASE_URL: process.env['DATABASE_URL']!,
 };
