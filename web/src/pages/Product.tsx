@@ -278,7 +278,7 @@ export default function ProductPage() {
           <p className="text-sm text-muted-foreground">Sign in to get price drop alerts via Telegram, Reddit, or email.</p>
           <div className="flex justify-center gap-3">
             <Link to="/login"><Button variant="outline" size="sm">Sign in</Button></Link>
-            <Link to="/register"><Button size="sm">Get started free</Button></Link>
+            <div className="strange-ring"><Link to="/register"><Button size="sm">Get started free</Button></Link></div>
           </div>
         </div>
       )}

@@ -223,8 +223,6 @@
 }
 
 .strange-ring > * {
-  /* isolate the button so it sits above the gradient bg */
-  position: relative;
+  /* keep button's own background intact; padding on parent creates the visible 2px ring */
   display: block;
-  background: var(--background);
 }

@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Sun, Moon } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { useTheme } from '@/lib/theme';
@@ -8,6 +8,10 @@ export default function Navbar() {
   const { isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
   const { theme, toggle } = useTheme();
+  const { pathname } = useLocation();
+
+  const onLoginPage    = pathname === '/login';
+  const onRegisterPage = pathname === '/register';
 
   return (
     <header className="border-b bg-background sticky top-0 z-10">
@@ -33,8 +37,23 @@ export default function Navbar() {
             </>
           ) : (
             <>
-              <Link to="/login"><Button variant="ghost" size="sm">Sign in</Button></Link>
-              <Link to="/register"><Button size="sm">Get started</Button></Link>
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={onLoginPage}
+                aria-current={onLoginPage ? 'page' : undefined}
+                onClick={() => { if (!onLoginPage) void navigate('/login'); }}
+              >
+                Sign in
+              </Button>
+              <Button
+                size="sm"
+                disabled={onRegisterPage}
+                aria-current={onRegisterPage ? 'page' : undefined}
+                onClick={() => { if (!onRegisterPage) void navigate('/register'); }}
+              >
+                Get started
+              </Button>
             </>
           )}
           <Button variant="ghost" size="icon" onClick={toggle} aria-label="Toggle theme" className="ml-1">
