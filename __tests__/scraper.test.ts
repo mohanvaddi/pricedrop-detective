@@ -18,9 +18,9 @@
  */
 
 import testUrls from '../tests.json';
-import { scrape, fetchPage, Platform } from '../scraper';
-import { detectPlatform } from '../constants/schema';
-import selectorsConfig from '../scraper/selectors.json';
+import { scrape, fetchPage, Platform } from '../src/scraper';
+import { detectPlatform } from '../src/constants/schema';
+import selectorsConfig from '../src/scraper/selectors.json';
 
 type SelectorConfig = { fetchMethod?: 'browser' | 'axios'; price: string[]; title: string[] };
 

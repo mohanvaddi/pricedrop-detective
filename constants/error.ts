@@ -2,10 +2,11 @@ export class CustomError<T> extends Error {
   data: T;
   constructor(
     message: string,
-    public override name: string,
+    name: string,
     data?: T
   ) {
     super(message);
+    this.name = name;
     this.data = data as T;
   }
 }
