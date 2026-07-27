@@ -21,6 +21,12 @@
       "#container > div > div._2c7YLP.UtUXW0._6t1WkM._3HqJxg > div > div._1YokD2._3Mn1Gg.col-8-12 > div:nth-child(1) > div > div:nth-child(1) > h1 > span.B_NuCI"
     ]
   },
+  "ajio": {
+    "fetchMethod": "curl",
+    "price": [],
+    "title": [],
+    "note": "Uses system curl binary with session cookies from ajio_curl.txt to bypass Akamai WAF TLS fingerprinting. Refresh: paste new 'Copy as cURL' from DevTools into ajio_curl.txt."
+  },
   "myntra": {
     "fetchMethod": "axios",
     "price": [],
@@ -30,5 +36,11 @@
       "priceFields": ["discountedPrice", "mrp"],
       "titleFields": ["name"]
     }
+  },
+  "tatacliq": {
+    "fetchMethod": "axios",
+    "price": [],
+    "title": [],
+    "note": "Uses internal product API with session cookie."
   }
 }

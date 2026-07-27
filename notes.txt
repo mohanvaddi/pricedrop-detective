@@ -1,0 +1,39 @@
+
+1. Price tracking for analytics
+  - Store updated price entry even when no change in price is detected once every 24 hours. this is to ensure that the price history is up to date and can be used for analytics and reporting.
+
+  ```
+  Store if
+  price changed
+  OR
+  24 hours elapsed
+  OR
+  product became available
+  OR
+  product went out of stock
+  ```
+
+2. Scraping frequency based on product type and category
+  - Implement a way to identify the product type and category and increase/decrease the frequency at which we scrape the product
+  Ex:
+    For Computer components, pheriperals, and electronics, we can scrape every 5-10 minutes, as the prices change frequently.
+    For clothing, shoes, and accessories, we can scrape every 1-2 hours,
+    For books, we can scrape every 6-12 hours.
+
+
+3. Scraping frequency based on price change history
+  - Implement a way to identify the price change history of a product and increase/decrease the frequency at which we scrape the product
+  Ex:
+    If a product has had a price change in the last 24 hours, we can scrape it more frequently, say every 5-10 minutes.
+    If a product has not had a price change in the last 7 days, we can scrape it less frequently, say every 1-2 hours maybe even less frequently.
+
+
+4. Concurrent scraping
+  - Ideally there should only be 3-4 types of scraping methods
+    1. Axios or fetch response
+    2. Playwright browser scraping
+      - Browser startup is expensive, so we should use a browser pool to manage the browser instances and reuse them for multiple scraping tasks.
+    3. Hybrid scraping (to bypass bot detection like akamai, Where we use browser to get the cookies first and then use axios or fetch to get the product data, and will keep using the cookies until they expire, then we will use the browser again to get new cookies)
+
+  We should add weightage on how many workers we need to run for each type of scraping method
+  - Axios or fetch requests are cheap and fast, we can use 'Axios workerpool' with 

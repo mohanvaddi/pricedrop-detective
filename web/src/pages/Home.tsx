@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 
-const PLATFORMS = ['Amazon', 'Flipkart', 'Myntra'];
+const PLATFORMS = ['Amazon', 'Flipkart', 'Myntra', 'Ajio', 'Tata Cliq'];
 
 const FEATURES = [
   {

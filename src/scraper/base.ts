@@ -1,6 +1,9 @@
 import * as cheerio from 'cheerio';
 import axios from 'axios';
 import axiosRetry from 'axios-retry';
+import { execSync } from 'child_process';
+import * as path from 'path';
+import * as fs from 'fs';
 import { chromium } from 'playwright';
 import { CustomError } from '../../constants/error';
 
@@ -20,16 +23,72 @@ export async function fetchPageWithAxios(url: string): Promise<cheerio.CheerioAP
   return cheerio.load(data);
 }
 
-export async function fetchPageWithBrowser(url: string): Promise<cheerio.CheerioAPI> {
-  const browser = await chromium.launch({ headless: true });
+/**
+ * Fetch a page by executing the system `curl` binary with headers/cookies parsed
+ * from a reference curl command file (e.g. ajio_curl.txt exported from DevTools).
+ * This bypasses TLS-fingerprint-based bot detection that blocks Node.js HTTP clients.
+ *
+ * Cookie refresh: paste a new "Copy as cURL" export from DevTools into curlFilePath.
+ */
+export async function fetchPageWithCurl(url: string, curlFilePath: string): Promise<cheerio.CheerioAPI> {
+  if (!fs.existsSync(curlFilePath)) {
+    throw new CustomError(
+      `curl session file not found: ${curlFilePath}. Export a working "Copy as cURL" from DevTools and save it there.`,
+      'CurlFileNotFound',
+    );
+  }
+
+  const curlTemplate = fs.readFileSync(curlFilePath, 'utf8');
+
+  // Extract -H headers (excluding host/content-length which vary per request)
+  const headerArgs = [...curlTemplate.matchAll(/-H '([^']+)'/g)]
+    .map((m) => m[1]!)
+    .filter((h) => !/^(host|content-length):/i.test(h))
+    .map((h) => `-H ${JSON.stringify(h)}`)
+    .join(' ');
+
+  // Extract -b cookies
+  const cookieMatch = curlTemplate.match(/-b '([^']+)'/);
+  const cookieArg = cookieMatch ? `-b ${JSON.stringify(cookieMatch[1]!)}` : '';
+
+  const cmd = `curl -s --max-time 30 --http2 ${cookieArg} ${headerArgs} ${JSON.stringify(url)}`;
+
+  const html = execSync(cmd, { encoding: 'utf8', maxBuffer: 10 * 1024 * 1024 });
+  if (html.includes('Access Denied') && html.length < 5000) {
+    throw new CustomError(
+      'curl fetch returned Access Denied — the session cookies in the curl file have expired. Refresh by pasting a new "Copy as cURL" export.',
+      'SessionExpired',
+    );
+  }
+  return cheerio.load(html);
+}
+
+export async function fetchPageWithBrowser(url: string, waitUntil: 'domcontentloaded' | 'networkidle' | 'load' = 'domcontentloaded'): Promise<cheerio.CheerioAPI> {
+  const browser = await chromium.launch({
+    headless: true,
+    args: [
+      '--disable-blink-features=AutomationControlled',
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+    ],
+  });
   try {
     const context = await browser.newContext({
       userAgent: DEFAULT_USER_AGENT,
       locale: 'en-IN',
-      extraHTTPHeaders: { 'Accept-Language': 'en-IN,en;q=0.9' },
+      viewport: { width: 1920, height: 1080 },
+      extraHTTPHeaders: {
+        'Accept-Language': 'en-IN,en;q=0.9',
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+        'Accept-Encoding': 'gzip, deflate, br',
+      },
+    });
+    // Hide automation indicators
+    await context.addInitScript(() => {
+      Object.defineProperty(navigator, 'webdriver', { get: () => false });
     });
     const page = await context.newPage();
-    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
+    await page.goto(url, { waitUntil, timeout: 45000 });
     const html = await page.content();
     return cheerio.load(html);
   } finally {

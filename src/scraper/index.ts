@@ -1,17 +1,21 @@
 import * as cheerio from 'cheerio';
 import { CustomError } from '../../constants/error';
 import { BaseScraper } from './base';
+import { AjioScraper } from './platforms/ajio';
 import { AmazonScraper } from './platforms/amazon';
 import { FlipkartScraper } from './platforms/flipkart';
 import { MyntraScraper } from './platforms/myntra';
+import { TataCliqScraper } from './platforms/tatacliq';
 import selectorsConfig from './selectors.json';
 
 export type Platform = keyof typeof selectorsConfig;
 
 const registry: Record<Platform, BaseScraper> = {
+  ajio: new AjioScraper(),
   amazon: new AmazonScraper(),
   flipkart: new FlipkartScraper(),
   myntra: new MyntraScraper(),
+  tatacliq: new TataCliqScraper(),
 };
 
 export function resolve(platform: Platform): BaseScraper {

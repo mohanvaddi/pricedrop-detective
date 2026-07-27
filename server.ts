@@ -67,7 +67,7 @@ const startTrackers = (products: EnrichedProduct[]) => {
         const direction = isPriceDrop ? 'dropped' : 'increased';
         const priceMessage = `${emoji} ${title ? title + '\n' : ''}Price ${direction} from ₹${recentPrice} to ₹${currentPrice} (${changePct}%)\n${url}`;
 
-        if (channel === 'telegram' && typeof channel_id === 'string') {
+        if (channel === 'telegram' && typeof channel_id === 'string' && bot) {
           await bot.api.sendMessage(
             parseInt(channel_id, 10),
             `${emoji} ${title ? title + '\n' : ''}Price ${direction} from ₹${recentPrice} to ₹${currentPrice} (${changePct}%)\n<a href="${url}">View product</a>`,
@@ -91,7 +91,7 @@ const startTrackers = (products: EnrichedProduct[]) => {
         if (error.name === 'PriceNotChanged') return;
         const subscribers = await findSubscribersForProduct(productId).catch(() => []);
         for (const { channel, channel_id } of subscribers) {
-          if (channel === 'telegram' && typeof channel_id === 'string') {
+          if (channel === 'telegram' && typeof channel_id === 'string' && bot) {
             await bot.api
               .sendMessage(
                 parseInt(channel_id, 10),
@@ -116,14 +116,18 @@ const startTrackers = (products: EnrichedProduct[]) => {
 
 app.listen(PORT, async () => {
   console.log(`Server running on port::${PORT} 🚀`);
-  await bot
-    .start({
-      onStart: () => console.log('Bot initialized'),
-      drop_pending_updates: true,
-    })
-    .catch((error: unknown) => {
-      throw new Error('Unable to init Bot:: ' + JSON.stringify(error));
-    });
+  if (bot) {
+    await bot
+      .start({
+        onStart: () => console.log('Bot initialized'),
+        drop_pending_updates: true,
+      })
+      .catch((error: unknown) => {
+        throw new Error('Unable to init Bot:: ' + JSON.stringify(error));
+      });
+  } else {
+    console.log('Telegram bot disabled (TELEGRAM_BOT_TOKEN not set)');
+  }
 
   if (REDDIT_ENABLED) {
     const { processDMs } = await import('./bots/reddit');
@@ -137,8 +141,13 @@ app.listen(PORT, async () => {
     console.log('Reddit bot initialized (polling every 60s)');
   }
 
-  // Serve web UI in production
+  // Serve web UI only when the build artefact is present (i.e. inside Docker).
+  // In dev the Vite dev server handles the frontend separately.
   const webDist = path.join(__dirname, 'web', 'dist');
-  app.use(express.static(webDist));
-  app.get('*', (_req, res) => res.sendFile(path.join(webDist, 'index.html')));
+  const fs = await import('fs');
+  if (fs.existsSync(webDist)) {
+    app.use(express.static(webDist));
+    // Express 5 requires a named wildcard parameter instead of bare '*'
+    app.get('/*splat', (_req, res) => res.sendFile(path.join(webDist, 'index.html')));
+  }
 });

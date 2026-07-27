@@ -13,13 +13,13 @@ const MAX_TRACKERS_PER_USER = 10;
 export async function createTracker(
   userId: string,
   body: z.infer<typeof NewTrackerDTO>,
-): Promise<{ hash: string; currentPrice: number }> {
+): Promise<{ hash: string; currentPrice: number; }> {
   const { url } = body;
 
   const platform = (body.website as Platform | undefined) ?? detectPlatform(url);
   if (!platform) {
     throw new CustomError(
-      'Could not detect platform from URL. Please specify: amazon or flipkart.',
+      'Could not detect platform from URL',
       'PlatformNotDetected',
     );
   }
@@ -62,7 +62,7 @@ export async function removeTracker(hash: string, userId: string): Promise<void>
   await SubscriptionDB.deleteSubscription(userId, hash);
 }
 
-export async function checkPriceChange(product: Product): Promise<{ currentPrice: number; recentPrice: number }> {
+export async function checkPriceChange(product: Product): Promise<{ currentPrice: number; recentPrice: number; }> {
   const { id: productId, url, website } = product;
 
   const latestPrice = await PriceDB.findLatestPrice(productId);
@@ -94,14 +94,14 @@ export async function getAllActiveProducts(): Promise<EnrichedProduct[]> {
   return ProductDB.findAllActiveProducts();
 }
 
-export async function getTrackersByUser(userId: string): Promise<{ product: Product; subscription: Subscription }[]> {
+export async function getTrackersByUser(userId: string): Promise<{ product: Product; subscription: Subscription; }[]> {
   const products = await ProductDB.findProductsByUser(userId);
   const subscriptions = await SubscriptionDB.findSubscriptionsByUser(userId);
   const subMap = new Map(subscriptions.map((s) => [s.product_id, s]));
   return products.map((product) => ({ product, subscription: subMap.get(product.id)! }));
 }
 
-export async function getTracker(hash: string, userId: string): Promise<{ product: Product; subscription: Subscription }> {
+export async function getTracker(hash: string, userId: string): Promise<{ product: Product; subscription: Subscription; }> {
   const product = await ProductDB.findProduct(hash);
   if (!product) throw new CustomError('Tracker not found', 'TrackerNotFound');
   const subscription = await SubscriptionDB.findSubscription(userId, hash);

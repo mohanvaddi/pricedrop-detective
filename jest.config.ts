@@ -12,8 +12,8 @@ const config: Config = {
   },
   testEnvironment: 'node',
   testMatch: ['**/__tests__/**/*.test.ts'],
-  // Each test hits a live URL — allow up to 30s per case
-  testTimeout: 30_000,
+  // Each test hits a live URL — allow up to 60s per case (browser-based scrapers are slower)
+  testTimeout: 60_000,
   // Only show details for failures; keep output clean on success
   verbose: false,
 };
