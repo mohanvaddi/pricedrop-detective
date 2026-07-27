@@ -34,9 +34,11 @@ export async function insertPrice(productId: string, price: number): Promise<voi
       `INSERT INTO product_metrics (product_id, initial_price, current_price, all_time_low)
        VALUES ($1, $2, $2, $2)
        ON CONFLICT (product_id) DO UPDATE SET
-         current_price = EXCLUDED.current_price,
-         all_time_low  = LEAST(product_metrics.all_time_low, EXCLUDED.current_price),
-         updated_at    = now()`,
+         current_price       = EXCLUDED.current_price,
+         all_time_low        = LEAST(product_metrics.all_time_low, EXCLUDED.current_price),
+         last_price_change_at = now(),
+         failure_count       = 0,
+         updated_at          = now()`,
       [productId, price],
     );
   } catch (error) {

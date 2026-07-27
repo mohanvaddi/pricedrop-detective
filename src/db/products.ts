@@ -83,6 +83,33 @@ export async function insertProduct(
   }
 }
 
+export async function updateLastScraped(productId: string, failed: boolean): Promise<void> {
+  try {
+    if (failed) {
+      await pool.query(
+        `INSERT INTO product_metrics (product_id, failure_count, last_scraped_at)
+         VALUES ($1, 1, now())
+         ON CONFLICT (product_id) DO UPDATE SET
+           failure_count   = product_metrics.failure_count + 1,
+           last_scraped_at = now(),
+           updated_at      = now()`,
+        [productId],
+      );
+    } else {
+      await pool.query(
+        `INSERT INTO product_metrics (product_id, failure_count, last_scraped_at)
+         VALUES ($1, 0, now())
+         ON CONFLICT (product_id) DO UPDATE SET
+           last_scraped_at = now(),
+           updated_at      = now()`,
+        [productId],
+      );
+    }
+  } catch {
+    // Non-fatal — scrape tracking should not abort the main scrape flow
+  }
+}
+
 export async function updateProductTitle(hash: string, title: string): Promise<void> {
   try {
     await pool.query('UPDATE products SET title = $1 WHERE id = $2', [title, hash]);

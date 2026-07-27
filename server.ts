@@ -4,7 +4,7 @@ import path from 'path';
 import bot from './bots/telegram';
 import { HttpStatusCode } from 'axios';
 import { CustomError } from './constants/error';
-import { getAllActiveProducts, checkPriceChange } from './src/services/tracker';
+import { getAllActiveProducts, checkPriceChange, checkPriceChangeFailed } from './src/services/tracker';
 import { findSubscribersForProduct } from './src/db/subscriptions';
 import { EnrichedProduct } from './constants/types';
 import config from './config';
@@ -12,6 +12,7 @@ import authRouter from './src/api/routes/auth';
 import productsRouter from './src/api/routes/products';
 import subscriptionsRouter from './src/api/routes/subscriptions';
 import { usersRouter } from './src/api/routes/users';
+import platformsRouter from './src/api/routes/platforms';
 
 const REDDIT_ENABLED = Boolean(config.REDDIT_CLIENT_ID && config.REDDIT_USERNAME);
 
@@ -25,6 +26,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/products', productsRouter);
 app.use('/api/subscriptions', subscriptionsRouter);
 app.use('/api/users', usersRouter);
+app.use('/api/platforms', platformsRouter);
 
 app.get('/health', (_req: Request, res: Response) => {
   res.status(200).json({ ok: true });
@@ -89,6 +91,7 @@ const startTrackers = (products: EnrichedProduct[]) => {
     } catch (error) {
       if (error instanceof CustomError) {
         if (error.name === 'PriceNotChanged') return;
+        await checkPriceChangeFailed(productId).catch(() => undefined);
         const subscribers = await findSubscribersForProduct(productId).catch(() => []);
         for (const { channel, channel_id } of subscribers) {
           if (channel === 'telegram' && typeof channel_id === 'string' && bot) {

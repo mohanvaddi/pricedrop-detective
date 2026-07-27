@@ -1,3 +1,47 @@
+Cosmetic:
+1. Add a loader line.. which goes just below the navbar, when switching between pages (idt this is needed, as webui is a spa, the page loads are instant)
+2. 
+
+Misc.:
+
+More Product Data tracking (add these to the appropriate db tables)
+- last_scraped_at : timestamp of the last time the product was scraped
+- last_price_change_at : timestamp of the last time the product price changed
+- scrape_interval (numeric): how often the product should be scraped (in seconds) (default: 300 seconds = 5 minutes)
+- failure_count (numeric): how many times the product scraping has failed in a row
+- priority (Enum): how important the product is (higher priority products should be scraped more frequently)
+  - Tier 1: High priority products (scrape every 5-10 minutes)
+  - Tier 2: Medium priority products (scrape every 1-2 hours)
+  - Tier 3: Low priority products (scrape every 6-12 hours)
+  - Tier 4: Very low priority products (scrape every 24 hours)
+  - Tier 5: No need to check for price changes (scrape once every 2 days)
+
+
+Show list of supported platforms in the UI
+- A button should be visible in the homepage and also at the page where the user adds a product to track, which shows a list of supported platforms and their scraping methods. This is to inform the user about the supported platforms and also to help them understand why some products may not be tracked.
+- We can use a drawer to the right showing a list of supported platforms, and a small checkmark next to the platforms that are currently working without issues. we should run a health check every day once and update the status of the platforms in the UI. If a platform is down, we can show a warning message to the user and also inform them that we are working on fixing the issue.
+
+Stores support to add:
+1. Amazon - Done
+2. Flipkart - Done
+3. Myntra - Done
+4. Ajio - Done
+5. Tata Cliq - Done
+6. Meesho
+7. Nykaa
+8. Ikea
+9. Apple
+10. JioMart
+11. book my trip ?
+12. Samsung
+13. Croma
+14. Decatlon
+15. Lenskart
+16. Redbus
+17. blinkit
+18. Instamart
+19. Bigbasket
+
 
 1. Price tracking for analytics
   - Store updated price entry even when no change in price is detected once every 24 hours. this is to ensure that the price history is up to date and can be used for analytics and reporting.
@@ -13,7 +57,9 @@
   product went out of stock
   ```
 
-2. Scraping frequency based on product type and category
+2. Create a fuzzyfind algo engine to categorize products. So we can modify scraping frequency based on product type and category
+  - Create a dictionary of keywords for each product type and category. For example, for computer components, we can have keywords like "CPU", "GPU", "RAM", "Motherboard", etc. For clothing, we can have keywords like "Shirt", "Pants", "Dress", etc.
+  - And then we can track if a product is categorized during the addition to the db, If the fuzzyfind algo failed to categorize the product, we can then update the algo with the new keywords and re-categorize the uncategorized products using scripts. This way we can improve the accuracy of the categorization over time.
   - Implement a way to identify the product type and category and increase/decrease the frequency at which we scrape the product
   Ex:
     For Computer components, pheriperals, and electronics, we can scrape every 5-10 minutes, as the prices change frequently.
@@ -28,12 +74,23 @@
     If a product has not had a price change in the last 7 days, we can scrape it less frequently, say every 1-2 hours maybe even less frequently.
 
 
-4. Concurrent scraping
+4. Parallel execution
   - Ideally there should only be 3-4 types of scraping methods
     1. Axios or fetch response
     2. Playwright browser scraping
       - Browser startup is expensive, so we should use a browser pool to manage the browser instances and reuse them for multiple scraping tasks.
     3. Hybrid scraping (to bypass bot detection like akamai, Where we use browser to get the cookies first and then use axios or fetch to get the product data, and will keep using the cookies until they expire, then we will use the browser again to get new cookies)
+      - Use Camoufox to get the main _abck cookie. Turn on the option to humanize and generate random mouse movements in camoufox to get the passing cookie. then use rnet with firefox135 with the cookie to call the api. Should be able to bypass as long as ip reputation is good
 
   We should add weightage on how many workers we need to run for each type of scraping method
-  - Axios or fetch requests are cheap and fast, we can use 'Axios workerpool' with 
+  - Axios or fetch requests are cheap and fast, we can use 'Axios workerpool' 
+
+
+5. Add rate limiting to how many products a user can add to track
+  - Start with 20.. if system is stable we can increase to 50 or reduce to 10.
+  - Not looking to monetize this, so to keep this free forever we need to limit the number of products a user can track. This is to ensure that the system is not abused and also to ensure that we can provide a good service to all users.
+
+
+6. Users should be able to create lists of products and share them with other users.
+  - Other users should be able to subscribe to the list and get notified when any product in the list has a price drop. This is to ensure that users can share their favorite products with their friends and family and also to ensure that users can get notified when any product in the list has a price drop.
+  - Or Users should be able to subscribe to few products in the list instead of the whole list.

@@ -7,6 +7,7 @@ import { CustomError } from '../../constants/error';
 import { Product, EnrichedProduct, Subscription } from '../../constants/types';
 import { NewTrackerDTO, detectPlatform } from '../constants/schema';
 import { caluculateHash } from '../constants/utils';
+import { updateLastScraped } from '../db/products';
 
 const MAX_TRACKERS_PER_USER = 10;
 
@@ -72,11 +73,17 @@ export async function checkPriceChange(product: Product): Promise<{ currentPrice
   const { currentPrice } = await scrape(website as Platform, url);
 
   if (currentPrice === recentPrice) {
+    await updateLastScraped(productId, false);
     throw new CustomError("Price didn't change", 'PriceNotChanged', { url, website });
   }
 
   await PriceDB.insertPrice(productId, currentPrice);
+  await updateLastScraped(productId, false);
   return { recentPrice, currentPrice };
+}
+
+export async function checkPriceChangeFailed(productId: string): Promise<void> {
+  await updateLastScraped(productId, true);
 }
 
 export async function setTrackerAlert(

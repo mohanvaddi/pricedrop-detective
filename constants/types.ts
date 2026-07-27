@@ -11,6 +11,8 @@ export interface Product {
   title: string | null;
   thumbnail_url: string | null;
   view_count: number;
+  scrape_interval: number;
+  priority: string;
   created_at: string;
 }
 
@@ -67,5 +69,8 @@ export interface ProductMetrics {
   initial_price: number | null;
   current_price: number | null;
   all_time_low: number | null;
+  last_scraped_at: string | null;
+  last_price_change_at: string | null;
+  failure_count: number;
   updated_at: string;
 }
