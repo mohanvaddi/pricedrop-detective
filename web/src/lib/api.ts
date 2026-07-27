@@ -71,6 +71,12 @@ export interface UserProfile {
   };
 }
 
+export interface Platform {
+  id: string;
+  name: string;
+  fetchMethod: 'axios' | 'browser' | 'curl';
+}
+
 export const api = {
   auth: {
     register: (email: string, password: string, displayName?: string) =>
@@ -96,6 +102,9 @@ export const api = {
         method: 'PATCH',
         body: JSON.stringify({ alertPrice, notifyEveryChange }),
       }),
+  },
+  platforms: {
+    list: () => request<{ data: Platform[] }>('/platforms').then((r) => r.data),
   },
   users: {
     me: () => request<{ data: UserProfile }>('/users/me').then((r) => r.data),

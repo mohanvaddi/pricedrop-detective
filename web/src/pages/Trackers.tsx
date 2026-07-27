@@ -11,7 +11,7 @@ import {
   createColumnHelper,
   type SortingState,
 } from '@tanstack/react-table';
-import { ExternalLink, ChevronUp, ChevronDown, ChevronsUpDown, Package, Trophy, Bell, CheckCircle2 } from 'lucide-react';
+import { ExternalLink, ChevronUp, ChevronDown, ChevronsUpDown, Package, Trophy, Bell, CheckCircle2, Globe } from 'lucide-react';
 import { api, type EnrichedProduct } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { PlatformBadge } from '@/components/PlatformBadge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { AlertConfigModal } from '@/components/AlertConfigModal';
+import { PlatformDrawer } from '@/components/PlatformDrawer';
 
 const col = createColumnHelper<EnrichedProduct & { _rank: number }>();
 
@@ -285,6 +286,12 @@ export default function TrackersPage() {
             onChange={(e) => setGlobalFilter(e.target.value)}
             className="sm:w-72"
           />
+          <PlatformDrawer>
+            <Button variant="outline" size="sm" className="gap-1.5 shrink-0">
+              <Globe size={14} />
+              Platforms
+            </Button>
+          </PlatformDrawer>
         </div>
 
         <div className="rounded-xl border overflow-x-auto">

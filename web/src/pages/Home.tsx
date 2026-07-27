@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { TrendingDown, Bell, Shield, ArrowRight, ChevronRight } from 'lucide-react';
+import { TrendingDown, Bell, Shield, ArrowRight, ChevronRight, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { PlatformDrawer } from '@/components/PlatformDrawer';
 
 const PLATFORMS = ['Amazon', 'Flipkart', 'Myntra', 'Ajio', 'Tata Cliq'];
 
@@ -155,6 +156,8 @@ export default function HomePage() {
             { name: 'Amazon', bg: 'bg-orange-50 border-orange-200 text-orange-700' },
             { name: 'Flipkart', bg: 'bg-blue-50 border-blue-200 text-blue-700' },
             { name: 'Myntra', bg: 'bg-pink-50 border-pink-200 text-pink-700' },
+            { name: 'Ajio', bg: 'bg-red-50 border-red-200 text-red-700' },
+            { name: 'Tata Cliq', bg: 'bg-purple-50 border-purple-200 text-purple-700' },
           ].map((p) => (
             <div
               key={p.name}
@@ -164,6 +167,12 @@ export default function HomePage() {
             </div>
           ))}
         </div>
+        <PlatformDrawer>
+          <Button variant="outline" size="sm" className="gap-1.5">
+            <Globe size={14} />
+            View all supported platforms
+          </Button>
+        </PlatformDrawer>
       </section>
     </div>
   );

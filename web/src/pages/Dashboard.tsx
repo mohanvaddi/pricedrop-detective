@@ -11,7 +11,7 @@ import {
   createColumnHelper,
   type SortingState,
 } from '@tanstack/react-table';
-import { ExternalLink, Package, Bell, Trash2, Pencil, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
+import { ExternalLink, Package, Bell, Trash2, Pencil, ChevronUp, ChevronDown, ChevronsUpDown, Globe } from 'lucide-react';
 import { api, type TrackerEntry } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { PlatformBadge } from '@/components/PlatformBadge';
 import { AlertConfigModal } from '@/components/AlertConfigModal';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { PlatformDrawer } from '@/components/PlatformDrawer';
 
 const col = createColumnHelper<TrackerEntry>();
 
@@ -228,12 +229,20 @@ export default function DashboardPage() {
             />
             <Button type="submit">Track</Button>
           </form>
-          <Input
-            placeholder="Search…"
-            value={globalFilter}
-            onChange={(e) => setGlobalFilter(e.target.value)}
-            className="sm:w-56"
-          />
+          <div className="flex gap-2 items-center">
+            <PlatformDrawer>
+              <Button variant="outline" size="sm" className="gap-1.5 shrink-0">
+                <Globe size={14} />
+                Platforms
+              </Button>
+            </PlatformDrawer>
+            <Input
+              placeholder="Search…"
+              value={globalFilter}
+              onChange={(e) => setGlobalFilter(e.target.value)}
+              className="sm:w-56"
+            />
+          </div>
         </div>
         {addError && <p className="text-sm text-destructive">{addError}</p>}
 
