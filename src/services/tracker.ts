@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import axios from 'axios';
 import * as ProductDB from '../db/products';
 import * as SubscriptionDB from '../db/subscriptions';
 import * as PriceDB from '../db/prices';
@@ -9,6 +10,19 @@ import { NewTrackerDTO, detectPlatform } from '../constants/schema';
 import { caluculateHash } from '../constants/utils';
 import { updateLastScraped } from '../db/products';
 
+async function expandUrl(url: string): Promise<string> {
+  try {
+    const response = await axios.get(url, {
+      maxRedirects: 10,
+      validateStatus: () => true,
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; PriceDrop-Detective/1.0)' },
+    });
+    return (response.request as any)?.res?.responseUrl ?? url;
+  } catch {
+    return url;
+  }
+}
+
 const MAX_TRACKERS_PER_USER = 10;
 
 export async function createTracker(
@@ -17,7 +31,14 @@ export async function createTracker(
 ): Promise<{ hash: string; currentPrice: number; }> {
   const { url } = body;
 
-  const platform = (body.website as Platform | undefined) ?? detectPlatform(url);
+  let resolvedUrl = url;
+  let platform = (body.website as Platform | undefined) ?? detectPlatform(url);
+
+  if (!platform) {
+    resolvedUrl = await expandUrl(url);
+    platform = detectPlatform(resolvedUrl);
+  }
+
   if (!platform) {
     throw new CustomError(
       'Could not detect platform from URL',
@@ -33,7 +54,7 @@ export async function createTracker(
     );
   }
 
-  const canonicalId = canonicalizeUrl(platform, url);
+  const canonicalId = canonicalizeUrl(platform, resolvedUrl);
   const hash = caluculateHash(JSON.stringify({ website: platform, canonicalId }));
 
   const existingProduct = await ProductDB.findProduct(hash);
@@ -49,8 +70,8 @@ export async function createTracker(
   }
 
   // New product — scrape, persist, then subscribe
-  const { currentPrice, title, thumbnailUrl } = await scrape(platform, url);
-  await ProductDB.insertProduct(hash, url, platform, title, thumbnailUrl);
+  const { currentPrice, title, thumbnailUrl } = await scrape(platform, resolvedUrl);
+  await ProductDB.insertProduct(hash, resolvedUrl, platform, title, thumbnailUrl);
   await PriceDB.insertPrice(hash, currentPrice);
   await SubscriptionDB.insertSubscription(userId, hash, body.alertPrice, body.notifyEveryChange);
 
