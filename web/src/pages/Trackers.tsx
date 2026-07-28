@@ -109,7 +109,7 @@ export default function TrackersPage() {
 
   const { data: mySubscriptions } = useQuery({
     queryKey: ['subscriptions'],
-    queryFn: api.subscriptions.list,
+    queryFn: () => api.subscriptions.list(),
     enabled: isAuthenticated,
   });
 
@@ -119,13 +119,20 @@ export default function TrackersPage() {
   );
 
   const subscribeMutation = useMutation({
-    mutationFn: ({ url, alertPrice, notifyEveryChange }: { url: string; alertPrice: number | null; notifyEveryChange: boolean }) =>
-      api.subscriptions.create(url, alertPrice ?? undefined, notifyEveryChange),
+    mutationFn: ({ url, alertPrice, notifyEveryChange, listId }: { url: string; alertPrice: number | null; notifyEveryChange: boolean; listId?: string }) =>
+      api.subscriptions.create(url, alertPrice ?? undefined, notifyEveryChange, listId),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['subscriptions'] });
       void queryClient.invalidateQueries({ queryKey: ['products'] });
+      void queryClient.invalidateQueries({ queryKey: ['lists'] });
       setSubscribeTarget(null);
     },
+  });
+
+  const { data: lists = [] } = useQuery({
+    queryKey: ['lists'],
+    queryFn: api.lists.list,
+    enabled: isAuthenticated,
   });
 
   const rankedProducts = useMemo(() => {
@@ -378,8 +385,9 @@ export default function TrackersPage() {
           open={Boolean(subscribeTarget)}
           onOpenChange={(open) => { if (!open) setSubscribeTarget(null); }}
           title={'Track: ' + (subscribeTarget.title?.slice(0, 50) ?? 'this product')}
-          onSave={(alertPrice, notifyEveryChange) =>
-            subscribeMutation.mutate({ url: subscribeTarget.url, alertPrice, notifyEveryChange })
+          lists={lists}
+          onSave={(alertPrice, notifyEveryChange, listId) =>
+            subscribeMutation.mutate({ url: subscribeTarget.url, alertPrice, notifyEveryChange, listId })
           }
           isLoading={subscribeMutation.isPending}
         />

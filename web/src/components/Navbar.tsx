@@ -26,7 +26,7 @@ export default function Navbar() {
           {isAuthenticated ? (
             <>
               <Link to="/dashboard">
-                <Button variant="ghost" size="sm">My Trackers</Button>
+                <Button variant="ghost" size="sm">Dashboard</Button>
               </Link>
               <Link to="/settings">
                 <Button variant="ghost" size="sm">Settings</Button>

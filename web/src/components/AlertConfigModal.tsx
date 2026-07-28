@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import type { UserList } from '@/lib/api';
 
 interface AlertConfigModalProps {
   open: boolean;
@@ -18,7 +19,9 @@ interface AlertConfigModalProps {
   title?: string;
   initialAlertPrice?: number | null;
   initialNotifyEveryChange?: boolean;
-  onSave: (alertPrice: number | null, notifyEveryChange: boolean) => void;
+  initialListId?: string;
+  lists?: UserList[];
+  onSave: (alertPrice: number | null, notifyEveryChange: boolean, listId?: string) => void;
   isLoading?: boolean;
 }
 
@@ -28,15 +31,18 @@ export function AlertConfigModal({
   title = 'Configure Alert',
   initialAlertPrice,
   initialNotifyEveryChange = true,
+  initialListId,
+  lists = [],
   onSave,
   isLoading,
 }: AlertConfigModalProps) {
   const [notifyEveryChange, setNotifyEveryChange] = useState(initialNotifyEveryChange);
   const [alertPriceStr, setAlertPriceStr] = useState(initialAlertPrice ? String(initialAlertPrice) : '');
+  const [selectedList, setSelectedList] = useState(initialListId ?? '');
 
   function handleSave() {
     const alertPrice = !notifyEveryChange && alertPriceStr.trim() !== '' ? parseFloat(alertPriceStr) : null;
-    onSave(isNaN(alertPrice!) ? null : alertPrice, notifyEveryChange);
+    onSave(isNaN(alertPrice!) ? null : alertPrice, notifyEveryChange, selectedList || undefined);
   }
 
   return (
@@ -78,6 +84,23 @@ export function AlertConfigModal({
                   onChange={(e) => setAlertPriceStr(e.target.value)}
                 />
               </div>
+            </div>
+          )}
+
+          {lists.length > 0 && (
+            <div className="space-y-2">
+              <Label htmlFor="list-select">Add to list</Label>
+              <select
+                id="list-select"
+                value={selectedList}
+                onChange={(e) => setSelectedList(e.target.value)}
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                <option value="">Unlisted</option>
+                {lists.map((list) => (
+                  <option key={list.id} value={list.id}>{list.name}</option>
+                ))}
+              </select>
             </div>
           )}
         </div>

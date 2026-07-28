@@ -13,6 +13,7 @@ import productsRouter from './src/api/routes/products';
 import subscriptionsRouter from './src/api/routes/subscriptions';
 import { usersRouter } from './src/api/routes/users';
 import platformsRouter from './src/api/routes/platforms';
+import listsRouter from './src/api/routes/lists';
 
 const REDDIT_ENABLED = Boolean(config.REDDIT_CLIENT_ID && config.REDDIT_USERNAME);
 
@@ -27,6 +28,7 @@ app.use('/api/products', productsRouter);
 app.use('/api/subscriptions', subscriptionsRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/platforms', platformsRouter);
+app.use('/api/lists', listsRouter);
 
 app.get('/health', (_req: Request, res: Response) => {
   res.status(200).json({ ok: true });

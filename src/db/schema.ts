@@ -1,4 +1,4 @@
-import { pgTable, text, integer, boolean, timestamp, bigint, uuid, index } from 'drizzle-orm/pg-core';
+import { pgTable, text, integer, boolean, timestamp, bigint, uuid, index, unique } from 'drizzle-orm/pg-core';
 
 // ---------------------------------------------------------------------------
 // 1. Abstract identity
@@ -108,6 +108,37 @@ export const productMetrics = pgTable('product_metrics', {
 });
 
 // ---------------------------------------------------------------------------
+// 9. Lists — user-created product groupings
+// ---------------------------------------------------------------------------
+export const lists = pgTable('lists', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  isPublic: boolean('is_public').notNull().default(true),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  index('lists_user_idx').on(t.userId),
+  unique('lists_user_name_uniq').on(t.userId, t.name),
+]);
+
+// ---------------------------------------------------------------------------
+// 10. List items — maps a subscription to exactly one list
+// ---------------------------------------------------------------------------
+export const listItems = pgTable('list_items', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  listId: uuid('list_id')
+    .notNull()
+    .references(() => lists.id, { onDelete: 'cascade' }),
+  subscriptionId: uuid('subscription_id')
+    .notNull()
+    .unique()
+    .references(() => subscriptions.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
 // Inferred types — used throughout the app instead of manual interfaces
 // ---------------------------------------------------------------------------
 export type User = typeof users.$inferSelect;
@@ -118,6 +149,8 @@ export type Product = typeof products.$inferSelect;
 export type Subscription = typeof subscriptions.$inferSelect;
 export type Price = typeof prices.$inferSelect;
 export type ProductMetrics = typeof productMetrics.$inferSelect;
+export type List = typeof lists.$inferSelect;
+export type ListItem = typeof listItems.$inferSelect;
 
 // Derived type from the findAllActiveProducts join query
 export interface EnrichedProduct extends Product {

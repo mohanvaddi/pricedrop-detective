@@ -64,6 +64,15 @@ export interface TrackerEntry {
   subscription: Subscription;
 }
 
+export interface UserList {
+  id: string;
+  userId: string;
+  name: string;
+  isPublic: boolean;
+  itemCount: number;
+  createdAt: string;
+}
+
 export interface UserProfile {
   email: string | null;
   display_name: string | null;
@@ -71,6 +80,24 @@ export interface UserProfile {
     telegram: { telegram_id: number; username: string } | null;
     reddit: { reddit_username: string } | null;
   };
+}
+
+export interface PublicListProduct {
+  id: string;
+  url: string;
+  website: string;
+  title: string | null;
+  thumbnailUrl: string | null;
+  currentPrice: number | null;
+  initialPrice: number | null;
+  allTimeLow: number | null;
+}
+
+export interface PublicListData {
+  id: string;
+  name: string;
+  ownerName: string | null;
+  products: PublicListProduct[];
 }
 
 export interface Platform {
@@ -92,18 +119,28 @@ export const api = {
     prices: (id: string) => request<{ data: Price[] }>('/products/' + id + '/prices').then((r) => r.data),
   },
   subscriptions: {
-    list: () => request<{ data: TrackerEntry[] }>('/subscriptions').then((r) => r.data),
-    create: (url: string, alertPrice?: number | null, notifyEveryChange?: boolean) =>
+    list: (listId?: string) => {
+      const params = listId ? '?listId=' + listId : '';
+      return request<{ data: TrackerEntry[] }>('/subscriptions' + params).then((r) => r.data);
+    },
+    create: (url: string, alertPrice?: number | null, notifyEveryChange?: boolean, listId?: string) =>
       request<{ data: { hash: string; currentPrice: number } }>('/subscriptions', {
         method: 'POST',
-        body: JSON.stringify({ url, alertPrice, notifyEveryChange }),
+        body: JSON.stringify({ url, alertPrice, notifyEveryChange, listId }),
       }),
     delete: (productId: string) => request<void>('/subscriptions/' + productId, { method: 'DELETE' }),
-    updateAlert: (productId: string, alertPrice: number | null, notifyEveryChange: boolean) =>
+    updateAlert: (productId: string, alertPrice: number | null, notifyEveryChange: boolean, listId?: string | null) =>
       request<void>('/subscriptions/' + productId + '/alert', {
         method: 'PATCH',
-        body: JSON.stringify({ alertPrice, notifyEveryChange }),
+        body: JSON.stringify({ alertPrice, notifyEveryChange, ...(listId !== undefined ? { listId } : {}) }),
       }),
+  },
+  lists: {
+    list: () => request<{ data: UserList[] }>('/lists').then((r) => r.data),
+    create: (name: string) => request<{ data: UserList }>('/lists', { method: 'POST', body: JSON.stringify({ name }) }).then((r) => r.data),
+    update: (id: string, data: { name?: string; isPublic?: boolean }) => request<void>('/lists/' + id, { method: 'PATCH', body: JSON.stringify(data) }),
+    delete: (id: string) => request<void>('/lists/' + id, { method: 'DELETE' }),
+    getPublic: (id: string) => request<{ data: PublicListData }>('/lists/' + id + '/public').then((r) => r.data),
   },
   platforms: {
     list: () => request<{ data: Platform[] }>('/platforms').then((r) => r.data),

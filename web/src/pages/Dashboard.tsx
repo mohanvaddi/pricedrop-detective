@@ -11,7 +11,7 @@ import {
   createColumnHelper,
   type SortingState,
 } from '@tanstack/react-table';
-import { ExternalLink, Package, Bell, Trash2, Pencil, ChevronUp, ChevronDown, ChevronsUpDown, Globe } from 'lucide-react';
+import { ExternalLink, Package, Bell, Trash2, Pencil, ChevronUp, ChevronDown, ChevronsUpDown, Globe, Share2, Check } from 'lucide-react';
 import { api, type TrackerEntry } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,15 @@ import { StoreBadge } from '@/components/StoreBadge';
 import { AlertConfigModal } from '@/components/AlertConfigModal';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { StoreDrawer } from '@/components/StoreDrawer';
+import { ListSidebar, type ListFilter } from '@/components/ListSidebar';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 const col = createColumnHelper<TrackerEntry>();
 
@@ -62,20 +71,39 @@ export default function DashboardPage() {
   const [addAlertOpen, setAddAlertOpen] = useState(false);
   const [pendingUrl, setPendingUrl] = useState('');
   const [editTarget, setEditTarget] = useState<TrackerEntry | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<TrackerEntry | null>(null);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState('');
+  const [activeList, setActiveList] = useState<ListFilter>('all');
+  const [linkCopied, setLinkCopied] = useState(false);
 
-  const { data: trackers, isLoading } = useQuery({
+  // Fetch all subscriptions (for total count in sidebar)
+  const { data: allTrackers } = useQuery({
     queryKey: ['subscriptions'],
-    queryFn: api.subscriptions.list,
+    queryFn: () => api.subscriptions.list(),
+    enabled: isAuthenticated,
+  });
+
+  // Fetch filtered subscriptions based on active list
+  const { data: trackers, isLoading } = useQuery({
+    queryKey: ['subscriptions', activeList],
+    queryFn: () => api.subscriptions.list(activeList === 'all' ? undefined : activeList),
+    enabled: isAuthenticated,
+  });
+
+  // Fetch user lists for the alert modal dropdown
+  const { data: lists = [] } = useQuery({
+    queryKey: ['lists'],
+    queryFn: api.lists.list,
     enabled: isAuthenticated,
   });
 
   const addMutation = useMutation({
-    mutationFn: ({ alertPrice, notifyEveryChange }: { alertPrice: number | null; notifyEveryChange: boolean }) =>
-      api.subscriptions.create(pendingUrl, alertPrice ?? undefined, notifyEveryChange),
+    mutationFn: ({ alertPrice, notifyEveryChange, listId }: { alertPrice: number | null; notifyEveryChange: boolean; listId?: string }) =>
+      api.subscriptions.create(pendingUrl, alertPrice ?? undefined, notifyEveryChange, listId),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['subscriptions'] });
+      void queryClient.invalidateQueries({ queryKey: ['lists'] });
       setUrl(''); setPendingUrl(''); setAddAlertOpen(false); setAddError('');
     },
     onError: (e: Error) => { setAddError(e.message); setAddAlertOpen(false); },
@@ -83,14 +111,18 @@ export default function DashboardPage() {
 
   const deleteMutation = useMutation({
     mutationFn: (productId: string) => api.subscriptions.delete(productId),
-    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['subscriptions'] }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['subscriptions'] });
+      void queryClient.invalidateQueries({ queryKey: ['lists'] });
+    },
   });
 
   const alertMutation = useMutation({
-    mutationFn: ({ id, alertPrice, notifyEveryChange }: { id: string; alertPrice: number | null; notifyEveryChange: boolean }) =>
-      api.subscriptions.updateAlert(id, alertPrice, notifyEveryChange),
+    mutationFn: ({ id, alertPrice, notifyEveryChange, listId }: { id: string; alertPrice: number | null; notifyEveryChange: boolean; listId?: string | null }) =>
+      api.subscriptions.updateAlert(id, alertPrice, notifyEveryChange, listId),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['subscriptions'] });
+      void queryClient.invalidateQueries({ queryKey: ['lists'] });
       setEditTarget(null);
     },
   });
@@ -168,7 +200,7 @@ export default function DashboardPage() {
               <Button
                 variant="ghost" size="icon"
                 className="h-8 w-8 text-destructive hover:text-destructive"
-                onClick={() => deleteMutation.mutate(row.original.product.id)}
+                onClick={() => setDeleteTarget(row.original)}
               >
                 <Trash2 size={14} />
               </Button>
@@ -211,113 +243,149 @@ export default function DashboardPage() {
     setAddAlertOpen(true);
   }
 
+  // Determine heading based on active list
+  const activeListObj = lists.find((l) => l.id === activeList);
+  const heading = activeList === 'all'
+    ? 'All Products'
+    : activeList === 'unlisted'
+      ? 'Unlisted'
+      : activeListObj?.name ?? 'My Trackers';
+  const isCustomList = activeList !== 'all' && activeList !== 'unlisted' && !!activeListObj;
+
   return (
     <TooltipProvider>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold">My Trackers</h1>
-          <p className="text-muted-foreground text-sm">Manage products you are tracking and configure your alerts.</p>
-        </div>
+      <div className="flex gap-6">
+        <ListSidebar
+          activeList={activeList}
+          onSelectList={setActiveList}
+          totalCount={allTrackers?.length ?? 0}
+        />
 
-        <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
-          <form onSubmit={handleUrlSubmit} className="flex gap-2 w-full sm:max-w-xl">
-            <Input
-              placeholder="Paste an Amazon, Flipkart, or Myntra URL…"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              className="flex-1"
-            />
-            <Button type="submit">Track</Button>
-          </form>
-          <div className="flex gap-2 items-center">
-            <StoreDrawer>
-              <Button variant="outline" size="sm" className="gap-1.5 shrink-0">
-                <Globe size={14} />
-                Stores
-              </Button>
-            </StoreDrawer>
-            <Input
-              placeholder="Search…"
-              value={globalFilter}
-              onChange={(e) => setGlobalFilter(e.target.value)}
-              className="sm:w-56"
-            />
+        <div className="flex-1 min-w-0 space-y-6">
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold">{heading}</h1>
+              {isCustomList && activeListObj.isPublic && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 gap-1.5 text-xs text-muted-foreground"
+                  onClick={() => {
+                    const shareUrl = `${window.location.origin}/dashboard/${activeListObj.id}`;
+                    navigator.clipboard.writeText(shareUrl).then(() => {
+                      setLinkCopied(true);
+                      setTimeout(() => setLinkCopied(false), 2000);
+                    });
+                  }}
+                >
+                  {linkCopied ? <><Check size={13} /> Copied!</> : <><Share2 size={13} /> Share</>}
+                </Button>
+              )}
+            </div>
+            <p className="text-muted-foreground text-sm">Manage products you are tracking and configure your alerts.</p>
           </div>
-        </div>
-        {addError && <p className="text-sm text-destructive">{addError}</p>}
 
-        <div className="rounded-xl border overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-muted/50">
-              {table.getHeaderGroups().map((hg) => (
-                <tr key={hg.id}>
-                  {hg.headers.map((header) => (
-                    <th key={header.id} className="px-4 py-3 text-left font-medium text-muted-foreground whitespace-nowrap">
-                      {header.isPlaceholder ? null : (
-                        <div
-                          className={`flex items-center gap-1 ${header.column.getCanSort() ? 'cursor-pointer select-none hover:text-foreground' : ''}`}
-                          onClick={header.column.getToggleSortingHandler()}
-                        >
-                          {flexRender(header.column.columnDef.header, header.getContext())}
-                          {header.column.getCanSort() && <SortIcon isSorted={header.column.getIsSorted()} />}
-                        </div>
-                      )}
-                    </th>
-                  ))}
-                </tr>
-              ))}
-            </thead>
-            <tbody>
-              {isLoading
-                ? Array.from({ length: 5 }).map((_, i) => (
-                    <tr key={i} className="border-t">
-                      {Array.from({ length: 5 }).map((__, j) => (
-                        <td key={j} className="px-4 py-3"><Skeleton className="h-4 w-full" /></td>
-                      ))}
-                    </tr>
-                  ))
-                : table.getRowModel().rows.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="text-center py-16 text-muted-foreground">
-                      {(trackers?.length ?? 0) === 0
-                        ? 'No trackers yet. Paste a URL above to get started.'
-                        : 'No results match your search.'}
-                    </td>
-                  </tr>
-                ) : (
-                  table.getRowModel().rows.map((row) => (
-                    <tr key={row.id} className="border-t hover:bg-muted/20 transition-colors">
-                      {row.getVisibleCells().map((cell) => (
-                        <td key={cell.id} className="px-4 py-3">
-                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                        </td>
-                      ))}
-                    </tr>
-                  ))
-                )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination */}
-        {(trackers?.length ?? 0) > 0 && (
-          <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <span>
-              Page {table.getState().pagination.pageIndex + 1} of {Math.max(1, table.getPageCount())} — {table.getFilteredRowModel().rows.length} results
-            </span>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>Previous</Button>
-              <Button variant="outline" size="sm" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>Next</Button>
+          <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+            <form onSubmit={handleUrlSubmit} className="flex gap-2 w-full sm:max-w-xl">
+              <Input
+                placeholder="Paste an Amazon, Flipkart, or Myntra URL…"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                className="flex-1 input-highlight"
+              />
+              <Button type="submit">Track</Button>
+            </form>
+            <div className="flex gap-2 items-center">
+              <StoreDrawer>
+                <Button variant="outline" size="sm" className="gap-1.5 shrink-0">
+                  <Globe size={14} />
+                  Stores
+                </Button>
+              </StoreDrawer>
+              <Input
+                placeholder="Search…"
+                value={globalFilter}
+                onChange={(e) => setGlobalFilter(e.target.value)}
+                className="sm:w-56"
+              />
             </div>
           </div>
-        )}
+          {addError && <p className="text-sm text-destructive">{addError}</p>}
+
+          <div className="rounded-xl border overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/50">
+                {table.getHeaderGroups().map((hg) => (
+                  <tr key={hg.id}>
+                    {hg.headers.map((header) => (
+                      <th key={header.id} className="px-4 py-3 text-left font-medium text-muted-foreground whitespace-nowrap">
+                        {header.isPlaceholder ? null : (
+                          <div
+                            className={`flex items-center gap-1 ${header.column.getCanSort() ? 'cursor-pointer select-none hover:text-foreground' : ''}`}
+                            onClick={header.column.getToggleSortingHandler()}
+                          >
+                            {flexRender(header.column.columnDef.header, header.getContext())}
+                            {header.column.getCanSort() && <SortIcon isSorted={header.column.getIsSorted()} />}
+                          </div>
+                        )}
+                      </th>
+                    ))}
+                  </tr>
+                ))}
+              </thead>
+              <tbody>
+                {isLoading
+                  ? Array.from({ length: 5 }).map((_, i) => (
+                      <tr key={i} className="border-t">
+                        {Array.from({ length: 5 }).map((__, j) => (
+                          <td key={j} className="px-4 py-3"><Skeleton className="h-4 w-full" /></td>
+                        ))}
+                      </tr>
+                    ))
+                  : table.getRowModel().rows.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="text-center py-16 text-muted-foreground">
+                        {(trackers?.length ?? 0) === 0
+                          ? 'No trackers yet. Paste a URL above to get started.'
+                          : 'No results match your search.'}
+                      </td>
+                    </tr>
+                  ) : (
+                    table.getRowModel().rows.map((row) => (
+                      <tr key={row.id} className="border-t hover:bg-muted/20 transition-colors">
+                        {row.getVisibleCells().map((cell) => (
+                          <td key={cell.id} className="px-4 py-3">
+                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                          </td>
+                        ))}
+                      </tr>
+                    ))
+                  )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination */}
+          {(trackers?.length ?? 0) > 0 && (
+            <div className="flex items-center justify-between text-sm text-muted-foreground">
+              <span>
+                Page {table.getState().pagination.pageIndex + 1} of {Math.max(1, table.getPageCount())} — {table.getFilteredRowModel().rows.length} results
+              </span>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>Previous</Button>
+                <Button variant="outline" size="sm" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>Next</Button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       <AlertConfigModal
         open={addAlertOpen}
         onOpenChange={setAddAlertOpen}
         title="Set up your alert"
-        onSave={(alertPrice, notifyEveryChange) => addMutation.mutate({ alertPrice, notifyEveryChange })}
+        lists={lists}
+        onSave={(alertPrice, notifyEveryChange, listId) => addMutation.mutate({ alertPrice, notifyEveryChange, listId })}
         isLoading={addMutation.isPending}
       />
 
@@ -326,13 +394,33 @@ export default function DashboardPage() {
           open={Boolean(editTarget)}
           onOpenChange={(open) => { if (!open) setEditTarget(null); }}
           title="Edit Alert"
+          lists={lists}
           initialAlertPrice={editTarget.subscription.alertPrice}
           initialNotifyEveryChange={editTarget.subscription.notifyEveryChange}
-          onSave={(alertPrice, notifyEveryChange) =>
-            alertMutation.mutate({ id: editTarget.product.id, alertPrice, notifyEveryChange })
+          onSave={(alertPrice, notifyEveryChange, listId) =>
+            alertMutation.mutate({ id: editTarget.product.id, alertPrice, notifyEveryChange, listId })
           }
           isLoading={alertMutation.isPending}
         />
+      )}
+
+      {deleteTarget && (
+        <Dialog open={Boolean(deleteTarget)} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
+          <DialogContent className="sm:max-w-sm !duration-0 data-[state=open]:animate-none data-[state=closed]:animate-none">
+            <DialogHeader>
+              <DialogTitle>Remove tracker?</DialogTitle>
+              <DialogDescription>
+                Stop tracking "{deleteTarget.product.title ?? deleteTarget.product.url}"? You can always re-add it later.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDeleteTarget(null)}>Cancel</Button>
+              <Button variant="destructive" onClick={() => { deleteMutation.mutate(deleteTarget.product.id); setDeleteTarget(null); }}>
+                Remove
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       )}
     </TooltipProvider>
   );

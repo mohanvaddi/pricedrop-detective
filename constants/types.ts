@@ -11,6 +11,8 @@ export type {
   Subscription,
   Price,
   ProductMetrics,
+  List,
+  ListItem,
 } from '../src/db/schema';
 
 export type CustomErrorType = {

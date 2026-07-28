@@ -21,6 +21,28 @@ Show list of supported platforms in the UI
 - A button should be visible in the homepage and also at the page where the user adds a product to track, which shows a list of supported platforms and their scraping methods. This is to inform the user about the supported platforms and also to help them understand why some products may not be tracked.
 - We can use a drawer to the right showing a list of supported platforms, and a small checkmark next to the platforms that are currently working without issues. we should run a health check every day once and update the status of the platforms in the UI. If a platform is down, we can show a warning message to the user and also inform them that we are working on fixing the issue.
 
+Lists Feature:
+1. User should be able to create lists, users can only create 5 lists, hard code the value in constants and use it, we'll change if needed.
+2. A left sidebar should be there where user should be able to see all the lists they have, by default the first list is always called "All Products", which will show all the products the user is tracking, and the second list is always called "Unlisted", which will show all the products that are not added to any list. The user should be able to create 3 more lists, and the user should be able to see all the lists they have created in the left sidebar.
+3. When user adds a product to track, they should be able to select which list they want to add the product to. by default the dropdown option has to be set to 'Unlisted', the product should be added to the "Unlisted" list.
+4. User should be able to rename the lists they have created, but they should not be able to rename the "Unlisted" list.
+5. In the left sidebar, user should have a + symbol where the user should be able to create a new list, when user click on the + a modal should open where user can enter the name of the new list and click on create button to create the new list. If the user has already created 5 lists, the + symbol should be disabled and a tooltip should be shown to the user informing them that they have reached the maximum limit of lists they can create. The modal should not be at the middle, it should be at the place of the + symbol, and the modal should be small and should not take up the whole screen. The modal should have a close button at the top right corner, which when clicked will close the modal. The modal should also have a cancel button, which when clicked will close the modal. The modal should also have a create button, which when clicked will create the new list and close the modal. The create button should be disabled if the user has not entered any name for the new list. The create button should be enabled only when the user has entered a name for the new list. The create button should be enabled only when the user has entered a name for the new list and the name is not already taken by another list. If the user tries to create a new list with a name that is already taken by another list, an error message should be shown to the user informing them that they cannot create a new list with that name as it is already taken by another list.
+6. In the left sidebar, next to the name of the list, to the right of the list name (right aligned) edit button should be there should be the pen icon people use to edit, and then A modal should come in that place where user can rename the list.
+7. User should be able to browse between the lists from the sidebar, one click on the list and the table should be repopulated with the products in that list.
+8. Heading text of the page should always be the name of the list that is being viewed, and the 
+9. Create a new table 'lists' or something and map them to user and product tables, so that we can have a many to many relationship between users and products through lists. The table should have the following columns:
+  - id (primary key)
+  - user_id (foreign key to users table)
+  - product_id (foreign key to products table)
+  - list_id (foreign key to lists table)
+  - created_at (timestamp)
+  - updated_at (timestamp)
+10. modify apis to support lists, so that when user adds a product to track, they can select which list they want to add the product to. by default the dropdown option has to be set to 'Unlisted', the product should be added to the "Unlisted" list.
+11. modify apis to send the products based on list.
+12. add a api to send available lists for the user when user clicks on the dropdown to select which list they want to add the product to.
+13. The same behaviour should be there when user tracks other users products, when we're asking 'Edit Alert' popup, we should also show the lists dropdown for the user to add the product to a list. by default the dropdown option has to be set to 'Unlisted', the product should be added to the "Unlisted" list.
+
+
 Stores support to add:
 1. Amazon - Done
 2. Flipkart - Done

@@ -1,6 +1,8 @@
 import { Router, Response } from 'express';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { createTracker, removeTracker, getTrackersByUser, setTrackerAlert } from '../../services/tracker';
+import { getTrackersByList, assignToList } from '../../services/lists';
+import { findSubscription } from '../../db/subscriptions';
 import { NewTrackerDTO } from '../../constants/schema';
 import { CustomError } from '../../../constants/error';
 
@@ -9,7 +11,13 @@ router.use(authMiddleware);
 
 router.get('/', async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const trackers = await getTrackersByUser(req.userId!);
+    const listId = req.query['listId'] as string | undefined;
+    let trackers;
+    if (listId) {
+      trackers = await getTrackersByList(req.userId!, listId);
+    } else {
+      trackers = await getTrackersByUser(req.userId!);
+    }
     res.json({ data: trackers });
   } catch (error) {
     console.error('[api/subscriptions] list error:', error);
@@ -23,8 +31,14 @@ router.post('/', async (req: AuthRequest, res: Response): Promise<void> => {
     res.status(400).json({ error: input.error.issues[0]!.message });
     return;
   }
+  const { listId } = req.body as { listId?: string };
   try {
     const { hash, currentPrice } = await createTracker(req.userId!, input.data);
+    // Assign to a list if specified
+    if (listId) {
+      const sub = await findSubscription(req.userId!, hash);
+      if (sub) await assignToList(sub.id, listId);
+    }
     res.status(201).json({ data: { hash, currentPrice } });
   } catch (error) {
     if (error instanceof CustomError) {
@@ -52,9 +66,18 @@ router.delete('/:productId', async (req: AuthRequest, res: Response): Promise<vo
 });
 
 router.patch('/:productId/alert', async (req: AuthRequest, res: Response): Promise<void> => {
-  const { alertPrice, notifyEveryChange } = req.body as { alertPrice?: number | null; notifyEveryChange?: boolean };
+  const { alertPrice, notifyEveryChange, listId } = req.body as {
+    alertPrice?: number | null;
+    notifyEveryChange?: boolean;
+    listId?: string | null;
+  };
   try {
     await setTrackerAlert(req.params['productId']! as string, req.userId!, alertPrice ?? null, notifyEveryChange);
+    // Update list assignment if provided
+    if (listId !== undefined) {
+      const sub = await findSubscription(req.userId!, req.params['productId'] as string);
+      if (sub) await assignToList(sub.id, listId);
+    }
     res.status(200).json({ message: 'Alert updated.' });
   } catch (error) {
     if (error instanceof CustomError) {

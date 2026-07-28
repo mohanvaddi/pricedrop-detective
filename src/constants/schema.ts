@@ -15,6 +15,7 @@ export const NewTrackerDTO = z.object({
     .optional(),
   alertPrice: z.number().positive().optional(),
   notifyEveryChange: z.boolean().optional(),
+  listId: z.string().uuid().optional(),
 });
 
 export function detectPlatform(url: string): Platform | null {
