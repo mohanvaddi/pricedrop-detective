@@ -1,11 +1,15 @@
-import { pool } from './client';
-import { Product, EnrichedProduct } from '../../constants/types';
+import { eq, sql } from 'drizzle-orm';
+import { db } from './client';
+import { products, subscriptions, productMetrics } from './schema';
+import { type Product, type EnrichedProduct } from './schema';
 import { CustomError } from '../../constants/error';
 import { Platform } from '../scraper';
 
+export type { Product, EnrichedProduct };
+
 export async function findProduct(hash: string): Promise<Product | null> {
   try {
-    const { rows } = await pool.query<Product>('SELECT * FROM products WHERE id = $1', [hash]);
+    const rows = await db.select().from(products).where(eq(products.id, hash));
     return rows[0] ?? null;
   } catch (error) {
     throw new CustomError('Unable to get product', 'ProductNotFound', { error });
@@ -14,29 +18,35 @@ export async function findProduct(hash: string): Promise<Product | null> {
 
 export async function incrementViewCount(hash: string): Promise<void> {
   try {
-    await pool.query('UPDATE products SET view_count = view_count + 1 WHERE id = $1', [hash]);
+    await db
+      .update(products)
+      .set({ viewCount: sql`${products.viewCount} + 1` })
+      .where(eq(products.id, hash));
   } catch {
-    // Non-fatal — ignore errors on view count increment
+    // Non-fatal
   }
 }
 
 export async function findAllActiveProducts(): Promise<EnrichedProduct[]> {
   try {
-    const { rows } = await pool.query<EnrichedProduct>(`
+    type Row = Record<string, unknown>;
+    const rows = await db.execute<Row>(sql`
       SELECT
         p.id,
         p.url,
         p.website,
         p.title,
-        p.thumbnail_url,
-        p.view_count,
-        p.created_at,
-        COUNT(DISTINCT s.user_id)::int AS subscriber_count,
-        (p.view_count + COUNT(DISTINCT s.user_id)::int * 2) AS rank_score,
-        pm.initial_price,
-        pm.current_price,
-        pm.all_time_low,
-        wu.display_name AS added_by
+        p.thumbnail_url        AS "thumbnailUrl",
+        p.view_count           AS "viewCount",
+        p.scrape_interval      AS "scrapeInterval",
+        p.priority,
+        p.created_at           AS "createdAt",
+        COUNT(DISTINCT s.user_id)::int                          AS "subscriberCount",
+        (p.view_count + COUNT(DISTINCT s.user_id)::int * 2)    AS "rankScore",
+        pm.initial_price       AS "initialPrice",
+        pm.current_price       AS "currentPrice",
+        pm.all_time_low        AS "allTimeLow",
+        wu.display_name        AS "addedBy"
       FROM products p
       JOIN subscriptions s ON s.product_id = p.id
       LEFT JOIN product_metrics pm ON pm.product_id = p.id
@@ -48,7 +58,7 @@ export async function findAllActiveProducts(): Promise<EnrichedProduct[]> {
       LEFT JOIN web_users wu ON wu.user_id = first_sub.user_id
       GROUP BY p.id, pm.initial_price, pm.current_price, pm.all_time_low, wu.display_name
     `);
-    return rows;
+    return rows.rows as unknown as EnrichedProduct[];
   } catch (error) {
     throw new CustomError('Unable to fetch active products', 'ProductsError', { error });
   }
@@ -56,11 +66,12 @@ export async function findAllActiveProducts(): Promise<EnrichedProduct[]> {
 
 export async function findProductsByUser(userId: string): Promise<Product[]> {
   try {
-    const { rows } = await pool.query<Product>(
-      'SELECT p.* FROM products p JOIN subscriptions s ON s.product_id = p.id WHERE s.user_id = $1',
-      [userId],
-    );
-    return rows;
+    const rows = await db
+      .select({ product: products })
+      .from(products)
+      .innerJoin(subscriptions, eq(subscriptions.productId, products.id))
+      .where(eq(subscriptions.userId, userId));
+    return rows.map((r) => r.product);
   } catch (error) {
     throw new CustomError('Unable to fetch products', 'ProductsError', { error });
   }
@@ -74,10 +85,7 @@ export async function insertProduct(
   thumbnailUrl: string | null = null,
 ): Promise<void> {
   try {
-    await pool.query(
-      'INSERT INTO products (id, url, website, title, thumbnail_url) VALUES ($1, $2, $3, $4, $5)',
-      [hash, url, website, title, thumbnailUrl],
-    );
+    await db.insert(products).values({ id: hash, url, website, title, thumbnailUrl });
   } catch (error) {
     throw new CustomError('Unable to add product', 'ProductInsertionFailed', { error });
   }
@@ -86,34 +94,39 @@ export async function insertProduct(
 export async function updateLastScraped(productId: string, failed: boolean): Promise<void> {
   try {
     if (failed) {
-      await pool.query(
-        `INSERT INTO product_metrics (product_id, failure_count, last_scraped_at)
-         VALUES ($1, 1, now())
-         ON CONFLICT (product_id) DO UPDATE SET
-           failure_count   = product_metrics.failure_count + 1,
-           last_scraped_at = now(),
-           updated_at      = now()`,
-        [productId],
-      );
+      await db
+        .insert(productMetrics)
+        .values({ productId, failureCount: 1, lastScrapedAt: new Date() })
+        .onConflictDoUpdate({
+          target: productMetrics.productId,
+          set: {
+            failureCount: sql`${productMetrics.failureCount} + 1`,
+            lastScrapedAt: sql`now()`,
+            updatedAt: sql`now()`,
+          },
+        });
     } else {
-      await pool.query(
-        `INSERT INTO product_metrics (product_id, failure_count, last_scraped_at)
-         VALUES ($1, 0, now())
-         ON CONFLICT (product_id) DO UPDATE SET
-           last_scraped_at = now(),
-           updated_at      = now()`,
-        [productId],
-      );
+      await db
+        .insert(productMetrics)
+        .values({ productId, failureCount: 0, lastScrapedAt: new Date() })
+        .onConflictDoUpdate({
+          target: productMetrics.productId,
+          set: {
+            lastScrapedAt: sql`now()`,
+            updatedAt: sql`now()`,
+          },
+        });
     }
   } catch {
-    // Non-fatal — scrape tracking should not abort the main scrape flow
+    // Non-fatal
   }
 }
 
 export async function updateProductTitle(hash: string, title: string): Promise<void> {
   try {
-    await pool.query('UPDATE products SET title = $1 WHERE id = $2', [title, hash]);
+    await db.update(products).set({ title }).where(eq(products.id, hash));
   } catch (error) {
     throw new CustomError('Unable to update product title', 'ProductUpdateError', { error });
   }
 }
+

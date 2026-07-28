@@ -31,11 +31,11 @@ function SortIcon({ isSorted }: { isSorted: false | 'asc' | 'desc' }) {
 
 function ThumbnailCell({ product }: { product: EnrichedProduct }) {
   const [err, setErr] = useState(false);
-  if (product.thumbnail_url && !err) {
+  if (product.thumbnailUrl && !err) {
     return (
       <img
         key={product.id}
-        src={product.thumbnail_url}
+        src={product.thumbnailUrl}
         alt={product.title ?? 'product'}
         className="w-12 h-12 object-contain rounded-md border bg-white"
         referrerPolicy="no-referrer"
@@ -130,7 +130,7 @@ export default function TrackersPage() {
 
   const rankedProducts = useMemo(() => {
     if (!products) return [];
-    const sorted = [...products].sort((a, b) => (b.rank_score ?? 0) - (a.rank_score ?? 0));
+    const sorted = [...products].sort((a, b) => (b.rankScore ?? 0) - (a.rankScore ?? 0));
     return sorted.map((p, i) => ({ ...p, _rank: i + 1 }));
   }, [products]);
 
@@ -162,22 +162,22 @@ export default function TrackersPage() {
         ),
         enableSorting: false,
       }),
-      col.accessor('rank_score', {
+      col.accessor('rankScore', {
         header: 'Rank',
-        cell: ({ row }) => <RankBadge rank={row.original._rank} score={row.original.rank_score ?? 0} />,
+        cell: ({ row }) => <RankBadge rank={row.original._rank} score={row.original.rankScore ?? 0} />,
       }),
       col.display({
         id: 'prices',
         header: 'Price',
         cell: ({ row }) => (
           <div className="flex flex-col gap-1">
-            <PriceCell label="Initial" price={row.original.initial_price} />
-            <PriceCell label="Current" price={row.original.current_price} comparePrice={row.original.initial_price} />
+            <PriceCell label="Initial" price={row.original.initialPrice} />
+            <PriceCell label="Current" price={row.original.currentPrice} comparePrice={row.original.initialPrice} />
           </div>
         ),
         enableSorting: false,
       }),
-      col.accessor('all_time_low', {
+      col.accessor('allTimeLow', {
         header: 'ATL',
         cell: ({ getValue }) => (
           <div className="flex flex-col leading-tight">
@@ -188,7 +188,7 @@ export default function TrackersPage() {
           </div>
         ),
       }),
-      col.accessor('added_by', {
+      col.accessor('addedBy', {
         header: 'Added by',
         cell: ({ getValue }) => (
           <span className="text-sm text-muted-foreground">{getValue() ?? 'Anonymous'}</span>
@@ -267,7 +267,7 @@ export default function TrackersPage() {
         (row.original.title ?? '').toLowerCase().includes(q) ||
         row.original.website.toLowerCase().includes(q) ||
         row.original.id.toLowerCase().includes(q) ||
-        (row.original.added_by ?? '').toLowerCase().includes(q)
+        (row.original.addedBy ?? '').toLowerCase().includes(q)
       );
     },
   });

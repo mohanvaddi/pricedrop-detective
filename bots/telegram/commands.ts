@@ -92,10 +92,10 @@ export async function listCommand(ctx: CommandContext<Context>): Promise<void> {
 
     for (const { product, subscription } of trackers) {
       const { url, website, id, title } = product;
-      const { alert_price } = subscription;
+      const { alertPrice } = subscription;
       const latest = await findLatestPrice(id);
       const priceText = latest ? `₹${latest.price}` : 'N/A';
-      const alertText = alert_price ? `\n🎯 Alert at: ₹${alert_price}` : '';
+      const alertText = alertPrice ? `\n🎯 Alert at: ₹${alertPrice}` : '';
 
       await ctx.reply(
         `${title ?? `<a href="${url}">Product URL</a>`}\n\nCurrent Price: ${priceText}${alertText}\nID: ${id}`,
@@ -127,10 +127,10 @@ export async function trackerCommand(ctx: CommandContext<Context>): Promise<void
     const userId = await resolveUserId(ctx);
     const { product, subscription } = await getTracker(hash, userId);
     const { url, website, title } = product;
-    const { alert_price } = subscription;
+    const { alertPrice } = subscription;
 
     const latestPrice = await findLatestPrice(hash);
-    const alertText = alert_price ? `\n🎯 Alert at: ₹${alert_price}` : '';
+    const alertText = alertPrice ? `\n🎯 Alert at: ₹${alertPrice}` : '';
 
     await ctx.reply(
       `${title ?? ''}\n${latestPrice ? 'Price: ₹' + latestPrice.price : ''}${alertText}\n\nID: ${hash}\nURL: ${url}`.trim(),
@@ -159,7 +159,7 @@ export async function historyCommand(ctx: CommandContext<Context>): Promise<void
   try {
     const prices = await findPricesByProduct(hash);
     const pricesStr = prices
-      .map(({ created_at, price }) => `${readableDateTime(created_at)}   -->  ${price}`)
+      .map(({ createdAt, price }) => `${readableDateTime(createdAt)}   -->  ${price}`)
       .join('\n');
     await ctx.reply(`Price History for ${hash}\n\n` + pricesStr);
   } catch (error) {

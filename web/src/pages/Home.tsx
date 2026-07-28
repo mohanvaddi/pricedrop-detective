@@ -52,7 +52,7 @@ export default function HomePage() {
   }, []);
 
   const totalTracked = products?.length ?? 0;
-  const totalSubscribers = products?.reduce((acc, p) => acc + (p.subscriber_count ?? 0), 0) ?? 0;
+  const totalSubscribers = products?.reduce((acc, p) => acc + (p.subscriberCount ?? 0), 0) ?? 0;
 
   return (
     <div className="space-y-24">

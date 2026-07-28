@@ -27,34 +27,36 @@ export interface Product {
   url: string;
   website: string;
   title: string | null;
-  thumbnail_url: string | null;
-  view_count: number;
-  created_at: string;
+  thumbnailUrl: string | null;
+  viewCount: number;
+  scrapeInterval: number;
+  priority: string;
+  createdAt: string;
 }
 
 export interface EnrichedProduct extends Product {
-  subscriber_count: number;
-  rank_score: number;
-  initial_price: number | null;
-  current_price: number | null;
-  all_time_low: number | null;
-  added_by: string | null;
+  subscriberCount: number;
+  rankScore: number;
+  initialPrice: number | null;
+  currentPrice: number | null;
+  allTimeLow: number | null;
+  addedBy: string | null;
 }
 
 export interface Price {
   id: string;
   price: number;
-  product_id: string;
-  created_at: string;
+  productId: string;
+  createdAt: string;
 }
 
 export interface Subscription {
   id: string;
-  user_id: string;
-  product_id: string;
-  alert_price: number | null;
-  notify_every_change: boolean;
-  created_at: string;
+  userId: string;
+  productId: string;
+  alertPrice: number | null;
+  notifyEveryChange: boolean;
+  createdAt: string;
 }
 
 export interface TrackerEntry {

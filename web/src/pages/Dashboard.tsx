@@ -33,7 +33,7 @@ function SortIcon({ isSorted }: { isSorted: false | 'asc' | 'desc' }) {
 
 function ThumbnailCell({ entry }: { entry: TrackerEntry }) {
   const [err, setErr] = useState(false);
-  const url = (entry.product as { thumbnail_url?: string | null }).thumbnail_url;
+  const url = entry.product.thumbnailUrl;
   if (url && !err) {
     return (
       <img
@@ -130,11 +130,11 @@ export default function DashboardPage() {
       header: 'Alert Setting',
       cell: ({ row }) => {
         const { subscription } = row.original;
-        if (subscription.notify_every_change) {
+        if (subscription.notifyEveryChange) {
           return <span className="text-muted-foreground text-sm flex items-center gap-1"><Bell size={12} /> Every change</span>;
         }
-        if (subscription.alert_price != null) {
-          return <span className="text-primary font-medium text-sm">{fmt(subscription.alert_price)}</span>;
+        if (subscription.alertPrice != null) {
+          return <span className="text-primary font-medium text-sm">{fmt(subscription.alertPrice)}</span>;
         }
         return <span className="text-muted-foreground">—</span>;
       },
@@ -326,8 +326,8 @@ export default function DashboardPage() {
           open={Boolean(editTarget)}
           onOpenChange={(open) => { if (!open) setEditTarget(null); }}
           title="Edit Alert"
-          initialAlertPrice={editTarget.subscription.alert_price}
-          initialNotifyEveryChange={editTarget.subscription.notify_every_change}
+          initialAlertPrice={editTarget.subscription.alertPrice}
+          initialNotifyEveryChange={editTarget.subscription.notifyEveryChange}
           onSave={(alertPrice, notifyEveryChange) =>
             alertMutation.mutate({ id: editTarget.product.id, alertPrice, notifyEveryChange })
           }

@@ -1,14 +1,14 @@
-import { pool } from './client';
-import { Price } from '../../constants/types';
+import { eq, asc, desc, sql } from 'drizzle-orm';
+import { db } from './client';
+import { prices, productMetrics } from './schema';
+import { type Price } from './schema';
 import { CustomError } from '../../constants/error';
+
+export type { Price };
 
 export async function findPricesByProduct(productId: string): Promise<Price[]> {
   try {
-    const { rows } = await pool.query<Price>(
-      'SELECT * FROM prices WHERE product_id = $1 ORDER BY created_at ASC',
-      [productId],
-    );
-    return rows;
+    return await db.select().from(prices).where(eq(prices.productId, productId)).orderBy(asc(prices.createdAt));
   } catch (error) {
     throw new CustomError('Unable to fetch prices', 'PricesError', { error });
   }
@@ -16,10 +16,12 @@ export async function findPricesByProduct(productId: string): Promise<Price[]> {
 
 export async function findLatestPrice(productId: string): Promise<Price | null> {
   try {
-    const { rows } = await pool.query<Price>(
-      'SELECT * FROM prices WHERE product_id = $1 ORDER BY created_at DESC LIMIT 1',
-      [productId],
-    );
+    const rows = await db
+      .select()
+      .from(prices)
+      .where(eq(prices.productId, productId))
+      .orderBy(desc(prices.createdAt))
+      .limit(1);
     return rows[0] ?? null;
   } catch (error) {
     throw new CustomError('Unable to fetch latest price', 'PricesError', { error });
@@ -28,20 +30,23 @@ export async function findLatestPrice(productId: string): Promise<Price | null> 
 
 export async function insertPrice(productId: string, price: number): Promise<void> {
   try {
-    await pool.query('INSERT INTO prices (product_id, price) VALUES ($1, $2)', [productId, price]);
+    await db.insert(prices).values({ productId, price });
     // Upsert metrics: initial_price set only on first insert; current + ATL always updated
-    await pool.query(
-      `INSERT INTO product_metrics (product_id, initial_price, current_price, all_time_low)
-       VALUES ($1, $2, $2, $2)
-       ON CONFLICT (product_id) DO UPDATE SET
-         current_price       = EXCLUDED.current_price,
-         all_time_low        = LEAST(product_metrics.all_time_low, EXCLUDED.current_price),
-         last_price_change_at = now(),
-         failure_count       = 0,
-         updated_at          = now()`,
-      [productId, price],
-    );
+    await db
+      .insert(productMetrics)
+      .values({ productId, initialPrice: price, currentPrice: price, allTimeLow: price })
+      .onConflictDoUpdate({
+        target: productMetrics.productId,
+        set: {
+          currentPrice: sql`EXCLUDED.current_price`,
+          allTimeLow: sql`LEAST(${productMetrics.allTimeLow}, EXCLUDED.current_price)`,
+          lastPriceChangeAt: sql`now()`,
+          failureCount: 0,
+          updatedAt: sql`now()`,
+        },
+      });
   } catch (error) {
     throw new CustomError('Unable to create price', 'PriceNotCreated', { error });
   }
 }
+

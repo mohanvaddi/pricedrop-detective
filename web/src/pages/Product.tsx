@@ -107,15 +107,15 @@ export default function ProductPage() {
   if (!product) return <div className="text-center py-20 text-destructive">Product not found.</div>;
 
   const chartData = prices?.map((p) => ({
-    date: new Date(p.created_at).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }),
+    date: new Date(p.createdAt).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }),
     price: p.price,
-    fullDate: new Date(p.created_at).toLocaleString('en-IN'),
+    fullDate: new Date(p.createdAt).toLocaleString('en-IN'),
   }));
 
   const latestPrice = prices?.[prices.length - 1]?.price ?? null;
   const initialPrice = prices?.[0]?.price ?? null;
   const allTimeLow = prices ? Math.min(...prices.map((p) => p.price)) : null;
-  const lastChecked = prices?.[prices.length - 1]?.created_at;
+  const lastChecked = prices?.[prices.length - 1]?.createdAt;
 
   let priceDelta = null;
   let DeltaIcon = Minus;
@@ -131,9 +131,9 @@ export default function ProductPage() {
     <div className="max-w-3xl mx-auto space-y-8">
       {/* Header */}
       <div className="flex gap-6 items-start">
-        {product.thumbnail_url && !imgErr ? (
+        {product.thumbnailUrl && !imgErr ? (
           <img
-            src={product.thumbnail_url}
+            src={product.thumbnailUrl}
             alt={product.title ?? 'product'}
             className="w-24 h-24 object-contain rounded-xl border bg-white shrink-0"
             onError={() => setImgErr(true)}
@@ -288,8 +288,8 @@ export default function ProductPage() {
         open={alertOpen}
         onOpenChange={setAlertOpen}
         title={mySubscription ? 'Edit Alert' : 'Track this product'}
-        initialAlertPrice={mySubscription?.alert_price}
-        initialNotifyEveryChange={mySubscription?.notify_every_change ?? true}
+        initialAlertPrice={mySubscription?.alertPrice}
+        initialNotifyEveryChange={mySubscription?.notifyEveryChange ?? true}
         onSave={(alertPrice, notifyEveryChange) => {
           if (mySubscription) {
             alertMutation.mutate({ alertPrice, notifyEveryChange });

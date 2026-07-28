@@ -33,7 +33,7 @@ async function handleMessage(author: string, body: string): Promise<string> {
       if (trackers.length === 0) return 'You have no active trackers. Reply with `/create <url>` to start.';
       return trackers
         .map(({ product, subscription }) => {
-          const alertText = subscription.alert_price ? ` | Alert: ₹${subscription.alert_price}` : '';
+          const alertText = subscription.alertPrice ? ` | Alert: ₹${subscription.alertPrice}` : '';
           return `• ${product.title ?? product.url}\n  ID: ${product.id}${alertText}`;
         })
         .join('\n\n');

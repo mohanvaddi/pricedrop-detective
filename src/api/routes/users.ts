@@ -1,5 +1,7 @@
 import { Router, Response } from 'express';
-import { pool } from '../../db/client';
+import { eq } from 'drizzle-orm';
+import { db } from '../../db/client';
+import { webUsers, telegramUsers, redditUsers } from '../../db/schema';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 
 const router = Router();
@@ -8,26 +10,26 @@ router.use(authMiddleware);
 /** GET /api/users/me — profile + linked channels */
 router.get('/me', async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { rows: webRows } = await pool.query<{ email: string; display_name: string | null }>(
-      'SELECT email, display_name FROM web_users WHERE user_id = $1',
-      [req.userId],
-    );
-    const { rows: telegramRows } = await pool.query<{ telegram_id: number; username: string }>(
-      'SELECT telegram_id, username FROM telegram_users WHERE user_id = $1',
-      [req.userId],
-    );
-    const { rows: redditRows } = await pool.query<{ reddit_username: string }>(
-      'SELECT reddit_username FROM reddit_users WHERE user_id = $1',
-      [req.userId],
-    );
+    const webRow = await db
+      .select({ email: webUsers.email, displayName: webUsers.displayName })
+      .from(webUsers)
+      .where(eq(webUsers.userId, req.userId!));
+    const telegramRow = await db
+      .select({ telegramId: telegramUsers.telegramId, username: telegramUsers.username })
+      .from(telegramUsers)
+      .where(eq(telegramUsers.userId, req.userId!));
+    const redditRow = await db
+      .select({ redditUsername: redditUsers.redditUsername })
+      .from(redditUsers)
+      .where(eq(redditUsers.userId, req.userId!));
 
     res.json({
       data: {
-        email: webRows[0]?.email ?? null,
-        display_name: webRows[0]?.display_name ?? null,
+        email: webRow[0]?.email ?? null,
+        display_name: webRow[0]?.displayName ?? null,
         channels: {
-          telegram: telegramRows[0] ?? null,
-          reddit: redditRows[0] ?? null,
+          telegram: telegramRow[0] ?? null,
+          reddit: redditRow[0] ?? null,
         },
       },
     });
@@ -45,7 +47,10 @@ router.patch('/me', async (req: AuthRequest, res: Response): Promise<void> => {
     return;
   }
   try {
-    await pool.query('UPDATE web_users SET display_name = $1 WHERE user_id = $2', [display_name.trim(), req.userId]);
+    await db
+      .update(webUsers)
+      .set({ displayName: display_name.trim() })
+      .where(eq(webUsers.userId, req.userId!));
     res.json({ message: 'Profile updated.' });
   } catch (error) {
     console.error('[api/users] patch me error:', error);
@@ -61,10 +66,13 @@ router.post('/me/channels/telegram', async (req: AuthRequest, res: Response): Pr
     return;
   }
   try {
-    await pool.query(
-      'INSERT INTO telegram_users (user_id, telegram_id) VALUES ($1, $2) ON CONFLICT (user_id) DO UPDATE SET telegram_id = EXCLUDED.telegram_id',
-      [req.userId, telegram_id],
-    );
+    await db
+      .insert(telegramUsers)
+      .values({ userId: req.userId!, telegramId: telegram_id, username: '' })
+      .onConflictDoUpdate({
+        target: telegramUsers.userId,
+        set: { telegramId: telegram_id },
+      });
     res.json({ message: 'Telegram linked.' });
   } catch (error) {
     if ((error as { code?: string }).code === '23505') {
@@ -79,7 +87,7 @@ router.post('/me/channels/telegram', async (req: AuthRequest, res: Response): Pr
 /** DELETE /api/users/me/channels/telegram — unlink Telegram */
 router.delete('/me/channels/telegram', async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    await pool.query('DELETE FROM telegram_users WHERE user_id = $1', [req.userId]);
+    await db.delete(telegramUsers).where(eq(telegramUsers.userId, req.userId!));
     res.status(204).end();
   } catch (error) {
     console.error('[api/users] telegram unlink error:', error);
@@ -95,10 +103,13 @@ router.post('/me/channels/reddit', async (req: AuthRequest, res: Response): Prom
     return;
   }
   try {
-    await pool.query(
-      'INSERT INTO reddit_users (user_id, reddit_username) VALUES ($1, $2) ON CONFLICT (user_id) DO UPDATE SET reddit_username = EXCLUDED.reddit_username',
-      [req.userId, reddit_username.trim()],
-    );
+    await db
+      .insert(redditUsers)
+      .values({ userId: req.userId!, redditUsername: reddit_username.trim() })
+      .onConflictDoUpdate({
+        target: redditUsers.userId,
+        set: { redditUsername: reddit_username.trim() },
+      });
     res.json({ message: 'Reddit linked.' });
   } catch (error) {
     if ((error as { code?: string }).code === '23505') {
@@ -113,7 +124,7 @@ router.post('/me/channels/reddit', async (req: AuthRequest, res: Response): Prom
 /** DELETE /api/users/me/channels/reddit — unlink Reddit */
 router.delete('/me/channels/reddit', async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    await pool.query('DELETE FROM reddit_users WHERE user_id = $1', [req.userId]);
+    await db.delete(redditUsers).where(eq(redditUsers.userId, req.userId!));
     res.status(204).end();
   } catch (error) {
     console.error('[api/users] reddit unlink error:', error);

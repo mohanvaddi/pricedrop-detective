@@ -104,7 +104,7 @@ export async function getAllActiveProducts(): Promise<EnrichedProduct[]> {
 export async function getTrackersByUser(userId: string): Promise<{ product: Product; subscription: Subscription; }[]> {
   const products = await ProductDB.findProductsByUser(userId);
   const subscriptions = await SubscriptionDB.findSubscriptionsByUser(userId);
-  const subMap = new Map(subscriptions.map((s) => [s.product_id, s]));
+  const subMap = new Map(subscriptions.map((s) => [s.productId, s]));
   return products.map((product) => ({ product, subscription: subMap.get(product.id)! }));
 }
 

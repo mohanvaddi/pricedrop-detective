@@ -7,10 +7,6 @@ services:
       POSTGRES_DB: pricedrop
     volumes:
       - postgres_data:/var/lib/postgresql
-      - ./migrations/001_initial_schema.sql:/docker-entrypoint-initdb.d/001_initial_schema.sql:ro
-      - ./migrations/002_ui_overhaul.sql:/docker-entrypoint-initdb.d/002_ui_overhaul.sql:ro
-      - ./migrations/003_product_metrics.sql:/docker-entrypoint-initdb.d/003_product_metrics.sql:ro
-      - ./migrations/004_scrape_tracking.sql:/docker-entrypoint-initdb.d/004_scrape_tracking.sql:ro
     ports:
       - '5432:5432'
     healthcheck:
@@ -19,6 +15,20 @@ services:
       timeout: 5s
       retries: 5
 
+  # Runs Drizzle migrations before the app starts.
+  # If migrations fail this service exits non-zero and app never starts.
+  migrate:
+    build: .
+    command: tsx src/db/migrate.ts
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/pricedrop
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: 'no'
+
   app:
     build: .
     ports:
@@ -26,10 +36,12 @@ services:
     env_file:
       - .env
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/pricedrop
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/pricedrop
     depends_on:
       postgres:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     healthcheck:
       test: ['CMD-SHELL', 'curl -sf http://localhost:4000/health || exit 1']
       interval: 15s

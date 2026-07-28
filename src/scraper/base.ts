@@ -2,7 +2,6 @@ import * as cheerio from 'cheerio';
 import axios from 'axios';
 import axiosRetry from 'axios-retry';
 import { execSync } from 'child_process';
-import * as path from 'path';
 import * as fs from 'fs';
 import { chromium } from 'playwright';
 import { CustomError } from '../../constants/error';

@@ -1,4 +1,4 @@
-export const readableDateTime = (date: string): string => {
+export const readableDateTime = (date: string | Date): string => {
   return new Date(date).toLocaleDateString(undefined, {
     year: 'numeric',
     month: 'short',
