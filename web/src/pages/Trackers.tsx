@@ -17,10 +17,10 @@ import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
-import { PlatformBadge } from '@/components/PlatformBadge';
+import { StoreBadge } from '@/components/StoreBadge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { AlertConfigModal } from '@/components/AlertConfigModal';
-import { PlatformDrawer } from '@/components/PlatformDrawer';
+import { StoreDrawer } from '@/components/StoreDrawer';
 
 const col = createColumnHelper<EnrichedProduct & { _rank: number }>();
 
@@ -195,8 +195,8 @@ export default function TrackersPage() {
         ),
       }),
       col.accessor('website', {
-        header: 'Platform',
-        cell: ({ getValue }) => <PlatformBadge website={getValue()} />,
+        header: 'Store',
+        cell: ({ getValue }) => <StoreBadge website={getValue()} />,
       }),
       col.display({
         id: 'actions',
@@ -281,17 +281,17 @@ export default function TrackersPage() {
             <p className="text-muted-foreground text-sm">{rankedProducts.length} products being tracked</p>
           </div>
           <Input
-            placeholder="Search by name, platform, or user…"
+            placeholder="Search by name, store, or user…"
             value={globalFilter}
             onChange={(e) => setGlobalFilter(e.target.value)}
             className="sm:w-72"
           />
-          <PlatformDrawer>
+          <StoreDrawer>
             <Button variant="outline" size="sm" className="gap-1.5 shrink-0">
               <Globe size={14} />
-              Platforms
+              Stores
             </Button>
-          </PlatformDrawer>
+          </StoreDrawer>
         </div>
 
         <div className="rounded-xl border overflow-x-auto">

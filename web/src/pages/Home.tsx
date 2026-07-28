@@ -5,7 +5,7 @@ import { TrendingDown, Bell, Shield, ArrowRight, ChevronRight, Globe } from 'luc
 import { Button } from '@/components/ui/button';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
-import { PlatformDrawer } from '@/components/PlatformDrawer';
+import { StoreDrawer } from '@/components/StoreDrawer';
 
 const PLATFORMS = ['Amazon', 'Flipkart', 'Myntra', 'Ajio', 'Tata Cliq'];
 
@@ -102,6 +102,15 @@ export default function HomePage() {
             </div>
           )}
         </div>
+
+        <div className="flex justify-center">
+          <StoreDrawer>
+            <button className="inline-flex items-center gap-1.5 text-sm text-muted-foreground underline decoration-dotted underline-offset-4 cursor-pointer hover:text-foreground transition-colors">
+              <Globe size={13} />
+              Supported stores
+            </button>
+          </StoreDrawer>
+        </div>
       </section>
 
       {/* ── Stats ── */}
@@ -109,7 +118,7 @@ export default function HomePage() {
         {[
           { label: 'Products Tracked', value: totalTracked.toLocaleString('en-IN') },
           { label: 'Active Subscribers', value: totalSubscribers.toLocaleString('en-IN') },
-          { label: 'Platforms Supported', value: PLATFORMS.length.toString() },
+          { label: 'Stores Supported', value: PLATFORMS.length.toString() },
         ].map((stat) => (
           <div key={stat.label} className="rounded-2xl border bg-card p-6 shadow-sm">
             <div className="text-3xl font-bold text-primary">{stat.value}</div>
@@ -167,12 +176,12 @@ export default function HomePage() {
             </div>
           ))}
         </div>
-        <PlatformDrawer>
+        <StoreDrawer>
           <Button variant="outline" size="sm" className="gap-1.5">
             <Globe size={14} />
-            View all supported platforms
+            View all supported stores
           </Button>
-        </PlatformDrawer>
+        </StoreDrawer>
       </section>
     </div>
   );

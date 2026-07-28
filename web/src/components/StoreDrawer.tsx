@@ -10,7 +10,7 @@ const FETCH_METHOD_META: Record<string, { label: string; icon: React.ElementType
   curl: { label: 'Session-based', icon: Terminal, color: 'bg-amber-100 text-amber-700 border-amber-200' },
 };
 
-const PLATFORM_COLORS: Record<string, string> = {
+const STORE_COLORS: Record<string, string> = {
   amazon: 'bg-orange-100 text-orange-800',
   flipkart: 'bg-blue-100 text-blue-800',
   myntra: 'bg-pink-100 text-pink-800',
@@ -18,10 +18,10 @@ const PLATFORM_COLORS: Record<string, string> = {
   tatacliq: 'bg-purple-100 text-purple-800',
 };
 
-function PlatformRow({ platform }: { platform: Platform }) {
+function StoreRow({ platform }: { platform: Platform }) {
   const method = FETCH_METHOD_META[platform.fetchMethod] ?? FETCH_METHOD_META['axios']!;
   const MethodIcon = method.icon;
-  const colorClass = PLATFORM_COLORS[platform.id] ?? 'bg-muted text-foreground';
+  const colorClass = STORE_COLORS[platform.id] ?? 'bg-muted text-foreground';
 
   return (
     <div className="flex items-center justify-between py-3 border-b last:border-0">
@@ -42,15 +42,15 @@ function PlatformRow({ platform }: { platform: Platform }) {
   );
 }
 
-interface PlatformDrawerProps {
+interface StoreDrawerProps {
   children: React.ReactNode;
 }
 
-export function PlatformDrawer({ children }: PlatformDrawerProps) {
-  const { data: platforms, isLoading } = useQuery({
+export function StoreDrawer({ children }: StoreDrawerProps) {
+  const { data: stores, isLoading } = useQuery({
     queryKey: ['platforms'],
     queryFn: api.platforms.list,
-    staleTime: 1000 * 60 * 60, // 1 hour — platform list barely changes
+    staleTime: 1000 * 60 * 60,
   });
 
   return (
@@ -60,14 +60,21 @@ export function PlatformDrawer({ children }: PlatformDrawerProps) {
         <SheetHeader>
           <div className="flex items-center gap-2">
             <Globe size={18} className="text-primary" />
-            <SheetTitle>Supported Platforms</SheetTitle>
+            <SheetTitle>Supported Stores</SheetTitle>
           </div>
           <SheetDescription>
-            Platforms we can track prices on. Fetch method indicates how we retrieve product data.
+            Stores we can track prices on. Fetch method indicates how we retrieve product data.
           </SheetDescription>
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto px-6 pb-6">
+          <div className="mb-4 rounded-lg border bg-muted/40 p-4 text-xs text-muted-foreground space-y-1">
+            <p className="font-medium text-foreground text-xs">Fetch methods explained</p>
+            <p><span className="font-medium text-green-700">Direct HTTP</span> — plain axios request; fast and reliable.</p>
+            <p><span className="font-medium text-blue-700">Browser</span> — Playwright headless browser; used when JS rendering is required.</p>
+            <p><span className="font-medium text-amber-700">Session-based</span> — uses a seeded session to bypass bot-detection.</p>
+          </div>
+
           {isLoading ? (
             <div className="space-y-4 pt-2">
               {Array.from({ length: 4 }).map((_, i) => (
@@ -85,18 +92,11 @@ export function PlatformDrawer({ children }: PlatformDrawerProps) {
             </div>
           ) : (
             <div className="pt-2">
-              {(platforms ?? []).map((p) => (
-                <PlatformRow key={p.id} platform={p} />
+              {(stores ?? []).map((s) => (
+                <StoreRow key={s.id} platform={s} />
               ))}
             </div>
           )}
-
-          <div className="mt-6 rounded-lg border bg-muted/40 p-4 text-xs text-muted-foreground space-y-1">
-            <p className="font-medium text-foreground text-xs">Fetch methods explained</p>
-            <p><span className="font-medium text-green-700">Direct HTTP</span> — plain axios request; fast and reliable.</p>
-            <p><span className="font-medium text-blue-700">Browser</span> — Playwright headless browser; used when JS rendering is required.</p>
-            <p><span className="font-medium text-amber-700">Session-based</span> — uses a seeded session to bypass bot-detection.</p>
-          </div>
         </div>
       </SheetContent>
     </Sheet>

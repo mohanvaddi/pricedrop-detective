@@ -7,7 +7,7 @@ import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlatformBadge } from '@/components/PlatformBadge';
+import { StoreBadge } from '@/components/StoreBadge';
 import { AlertConfigModal } from '@/components/AlertConfigModal';
 
 function fmt(n: number) {
@@ -146,7 +146,7 @@ export default function ProductPage() {
         <div className="flex-1 min-w-0 space-y-2">
           <h1 className="text-2xl font-bold leading-snug">{product.title ?? 'Unknown Product'}</h1>
           <div className="flex items-center gap-3 flex-wrap">
-            <PlatformBadge website={product.website} />
+            <StoreBadge website={product.website} />
             {latestPrice != null && (
               <span className="text-2xl font-semibold">{fmt(latestPrice)}</span>
             )}

@@ -17,10 +17,10 @@ import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
-import { PlatformBadge } from '@/components/PlatformBadge';
+import { StoreBadge } from '@/components/StoreBadge';
 import { AlertConfigModal } from '@/components/AlertConfigModal';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { PlatformDrawer } from '@/components/PlatformDrawer';
+import { StoreDrawer } from '@/components/StoreDrawer';
 
 const col = createColumnHelper<TrackerEntry>();
 
@@ -122,8 +122,8 @@ export default function DashboardPage() {
     }),
     col.accessor('product.website', {
       id: 'platform',
-      header: 'Platform',
-      cell: ({ getValue }) => <PlatformBadge website={getValue()} />,
+      header: 'Store',
+      cell: ({ getValue }) => <StoreBadge website={getValue()} />,
     }),
     col.display({
       id: 'alert',
@@ -230,12 +230,12 @@ export default function DashboardPage() {
             <Button type="submit">Track</Button>
           </form>
           <div className="flex gap-2 items-center">
-            <PlatformDrawer>
+            <StoreDrawer>
               <Button variant="outline" size="sm" className="gap-1.5 shrink-0">
                 <Globe size={14} />
-                Platforms
+                Stores
               </Button>
-            </PlatformDrawer>
+            </StoreDrawer>
             <Input
               placeholder="Search…"
               value={globalFilter}
