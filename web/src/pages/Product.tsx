@@ -74,7 +74,7 @@ export default function ProductPage() {
 
   const { data: subscriptions } = useQuery({
     queryKey: ['subscriptions'],
-    queryFn: api.subscriptions.list,
+    queryFn: () => api.subscriptions.list(),
     enabled: isAuthenticated,
   });
 
