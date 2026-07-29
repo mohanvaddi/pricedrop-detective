@@ -3,8 +3,17 @@ import { CustomError } from '../../constants/error';
 import { BaseScraper } from './base';
 import { AjioScraper } from './platforms/ajio';
 import { AmazonScraper } from './platforms/amazon';
+import { BigBasketScraper } from './platforms/bigbasket';
+import { BlinkitScraper } from './platforms/blinkit';
+import { CromaScraper } from './platforms/croma';
+import { DecathlonScraper } from './platforms/decathlon';
 import { FlipkartScraper } from './platforms/flipkart';
+import { IkeaScraper } from './platforms/ikea';
+import { JioMartScraper } from './platforms/jiomart';
+import { LenskartScraper } from './platforms/lenskart';
+import { MeeshoScraper } from './platforms/meesho';
 import { MyntraScraper } from './platforms/myntra';
+import { NykaaFashionScraper } from './platforms/nykaafashion';
 import { TataCliqScraper } from './platforms/tatacliq';
 import selectorsConfig from './selectors.json';
 
@@ -13,8 +22,17 @@ export type Platform = keyof typeof selectorsConfig;
 const registry: Record<Platform, BaseScraper> = {
   ajio: new AjioScraper(),
   amazon: new AmazonScraper(),
+  bigbasket: new BigBasketScraper(),
+  blinkit: new BlinkitScraper(),
+  croma: new CromaScraper(),
+  decathlon: new DecathlonScraper(),
   flipkart: new FlipkartScraper(),
+  ikea: new IkeaScraper(),
+  jiomart: new JioMartScraper(),
+  lenskart: new LenskartScraper(),
+  meesho: new MeeshoScraper(),
   myntra: new MyntraScraper(),
+  nykaafashion: new NykaaFashionScraper(),
   tatacliq: new TataCliqScraper(),
 };
 

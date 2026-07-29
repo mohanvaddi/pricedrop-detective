@@ -7,7 +7,7 @@ import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { StoreDrawer } from '@/components/StoreDrawer';
 
-const PLATFORMS = ['Amazon', 'Flipkart', 'Myntra', 'Ajio', 'Tata Cliq'];
+const PLATFORMS = ['Amazon', 'Flipkart', 'Myntra', 'Ajio', 'Tata Cliq', 'IKEA', 'Decathlon', 'Lenskart', 'Meesho', 'Nykaa Fashion', 'Croma', 'JioMart', 'Blinkit', 'BigBasket'];
 
 const FEATURES = [
   {
@@ -118,7 +118,7 @@ export default function HomePage() {
         {[
           { label: 'Products Tracked', value: totalTracked.toLocaleString('en-IN') },
           { label: 'Active Subscribers', value: totalSubscribers.toLocaleString('en-IN') },
-          { label: 'Stores Supported', value: PLATFORMS.length.toString() },
+          { label: 'Stores Supported', value: '12' },
         ].map((stat) => (
           <div key={stat.label} className="rounded-2xl border bg-card p-6 shadow-sm">
             <div className="text-3xl font-bold text-primary">{stat.value}</div>
@@ -167,6 +167,13 @@ export default function HomePage() {
             { name: 'Myntra', bg: 'bg-pink-50 border-pink-200 text-pink-700' },
             { name: 'Ajio', bg: 'bg-red-50 border-red-200 text-red-700' },
             { name: 'Tata Cliq', bg: 'bg-purple-50 border-purple-200 text-purple-700' },
+            { name: 'IKEA', bg: 'bg-yellow-50 border-yellow-200 text-yellow-700' },
+            { name: 'Decathlon', bg: 'bg-blue-50 border-blue-300 text-blue-800' },
+            { name: 'Lenskart', bg: 'bg-teal-50 border-teal-200 text-teal-700' },
+            { name: 'Meesho', bg: 'bg-fuchsia-50 border-fuchsia-200 text-fuchsia-700' },
+            { name: 'Nykaa Fashion', bg: 'bg-rose-50 border-rose-200 text-rose-700' },
+            { name: 'Croma', bg: 'bg-green-50 border-green-200 text-green-700' },
+            { name: 'JioMart', bg: 'bg-sky-50 border-sky-200 text-sky-700' },
           ].map((p) => (
             <div
               key={p.name}

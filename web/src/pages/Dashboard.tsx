@@ -288,7 +288,7 @@ export default function DashboardPage() {
           <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
             <form onSubmit={handleUrlSubmit} className="flex gap-2 w-full sm:max-w-xl">
               <Input
-                placeholder="Paste an Amazon, Flipkart, or Myntra URL…"
+                placeholder="Paste a product URL (Amazon, Flipkart, IKEA, Decathlon, Lenskart, Meesho…)"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 className="flex-1 input-highlight"

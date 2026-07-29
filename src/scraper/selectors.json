@@ -42,5 +42,60 @@
     "price": [],
     "title": [],
     "note": "Uses internal product API with session cookie."
+  },
+  "ikea": {
+    "fetchMethod": "axios",
+    "price": [],
+    "title": [],
+    "note": "Price from inline prefixedProductId/price pattern. Title from <title> tag."
+  },
+  "decathlon": {
+    "fetchMethod": "axios",
+    "price": [],
+    "title": [],
+    "note": "Price and title from JSON-LD @type:Product offers."
+  },
+  "lenskart": {
+    "fetchMethod": "axios",
+    "price": [],
+    "title": [],
+    "note": "Price and title from JSON-LD @type:Product offers."
+  },
+  "meesho": {
+    "fetchMethod": "axios",
+    "price": [],
+    "title": [],
+    "note": "Akamai WAF blocks desktop UA. Uses axios with Android mobile user-agent. Price and title from JSON-LD post-render."
+  },
+  "nykaafashion": {
+    "fetchMethod": "axios",
+    "price": [],
+    "title": [],
+    "note": "Blocks desktop UA. Uses axios with iPhone mobile user-agent. Price and title from JSON-LD."
+  },
+  "croma": {
+    "fetchMethod": "axios",
+    "price": [],
+    "title": [],
+    "note": "Akamai WAF blocks desktop UA. Uses axios with Android mobile user-agent. JSON-LD has literal newlines; price extracted via regex."
+  },
+  "jiomart": {
+    "fetchMethod": "browser",
+    "price": [],
+    "title": [],
+    "note": "Price is 0 in SSR. Uses Playwright browser with domcontentloaded wait. Price from data-price attribute or JSON-LD post-render."
+  },
+  "blinkit": {
+    "fetchMethod": "browser",
+    "price": [],
+    "title": [],
+    "note": "Uses Playwright with domcontentloaded (networkidle never resolves). Price and title from JSON-LD post-render."
+  },
+  "bigbasket": {
+    "fetchMethod": "axios",
+    "price": [],
+    "title": [],
+    "note": "Standard axios. Price from __NEXT_DATA__ productDetails.children[0].pricing.discount.prim_price.sp."
   }
 }
+
