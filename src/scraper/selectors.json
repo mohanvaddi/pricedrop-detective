@@ -1,0 +1,46 @@
+{
+  "amazon": {
+    "fetchMethod": "browser",
+    "price": [
+      ".priceToPay .a-price-whole",
+      "#corePriceDisplay_desktop_feature_div .a-price-whole",
+      "#corePriceDisplay_desktop_feature_div > div.a-section.a-spacing-none.aok-align-center > span.a-price.aok-align-center.reinventPricePriceToPayMargin.priceToPay > span:nth-child(2) > span.a-price-whole"
+    ],
+    "title": [
+      "#productTitle"
+    ]
+  },
+  "flipkart": {
+    "fetchMethod": "axios",
+    "price": [
+      "#container > div > div._2c7YLP.UtUXW0._6t1WkM._3HqJxg > div._1YokD2._2GoDe3 > div._1YokD2._3Mn1Gg.col-8-12 > div:nth-child(2) > div > div > div > div > div",
+      "#container > div > div._2c7YLP.UtUXW0._6t1WkM._3HqJxg > div._1YokD2._2GoDe3 > div._1YokD2._3Mn1Gg.col-8-12 > div:nth-child(1) > div > div > div > div > div"
+    ],
+    "title": [
+      "#container > div > div._2c7YLP.UtUXW0._6t1WkM._3HqJxg > div._1YokD2._2GoDe3 > div._1YokD2._3Mn1Gg.col-8-12 > div:nth-child(2) > div > div:nth-child(1) > h1 > span.B_NuCI",
+      "#container > div > div._2c7YLP.UtUXW0._6t1WkM._3HqJxg > div > div._1YokD2._3Mn1Gg.col-8-12 > div:nth-child(1) > div > div:nth-child(1) > h1 > span.B_NuCI"
+    ]
+  },
+  "ajio": {
+    "fetchMethod": "curl",
+    "price": [],
+    "title": [],
+    "note": "Uses system curl binary with session cookies from ajio_curl.txt to bypass Akamai WAF TLS fingerprinting. Refresh: paste new 'Copy as cURL' from DevTools into ajio_curl.txt."
+  },
+  "myntra": {
+    "fetchMethod": "axios",
+    "price": [],
+    "title": [],
+    "jsonExtraction": {
+      "source": "html",
+      "priceFields": ["discountedPrice", "mrp"],
+      "titleFields": ["name"]
+    }
+  },
+  "tatacliq": {
+    "fetchMethod": "axios",
+    "price": [],
+    "title": [],
+    "note": "Uses internal product API with session cookie."
+  }
+}

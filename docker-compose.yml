@@ -7,7 +7,6 @@ services:
       POSTGRES_DB: pricedrop
     volumes:
       - postgres_data:/var/lib/postgresql
-      - ./migrations/001_initial_schema.sql:/docker-entrypoint-initdb.d/001_initial_schema.sql:ro
     ports:
       - '5432:5432'
     healthcheck:
@@ -15,6 +14,20 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  # Runs Drizzle migrations before the app starts.
+  # If migrations fail this service exits non-zero and app never starts.
+  migrate:
+    build: .
+    command: tsx src/db/migrate.ts
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/pricedrop
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: 'no'
 
   app:
     build: .
@@ -27,6 +40,31 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -sf http://localhost:4000/health || exit 1']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 45s
+
+  # Runs price-check every 5 minutes by calling the /track endpoint.
+  # The app container handles concurrent scraping internally.
+  # Future: swap this container for a job-queue dispatcher (Bull/BullMQ)
+  # to enable worker-thread level parallelism without changing the app service.
+  cron:
+    image: alpine:3.19
+    entrypoint: ['/bin/sh', '-c']
+    command:
+      - |
+        apk add --no-cache curl
+        echo '*/5 * * * * curl -sf http://app:4000/track >> /proc/1/fd/1 2>&1' | crontab -
+        exec crond -f -d 8
+    depends_on:
+      app:
+        condition: service_healthy
+    restart: unless-stopped
 
 volumes:
   postgres_data:

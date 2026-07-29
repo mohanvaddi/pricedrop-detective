@@ -1,6 +1,19 @@
-import { Platform } from '../scraper';
-
-export type { Platform as Website };
+// Types are inferred from the Drizzle schema (src/db/schema.ts).
+// Kept here as a re-export for backward compatibility with any code
+// still importing from this path.
+export type {
+  User,
+  TelegramUser,
+  WebUser,
+  RedditUser,
+  Product,
+  EnrichedProduct,
+  Subscription,
+  Price,
+  ProductMetrics,
+  List,
+  ListItem,
+} from '../src/db/schema';
 
 export type CustomErrorType = {
   error: true;
@@ -8,32 +21,3 @@ export type CustomErrorType = {
   name: string;
 };
 
-export interface TrackedResults {
-  url: string;
-  website: Platform;
-  currentPrice: number;
-  recentPrice: number;
-}
-
-export interface Tracker {
-  created_at: string;
-  id: string;
-  url: string;
-  user: number;
-  title: string | null;
-  website: string;
-  alert_price: number | null;
-}
-
-export interface User {
-  created_at: string;
-  id: number;
-  username: string;
-}
-
-export interface Price {
-  created_at: string;
-  id: string;
-  price: number;
-  tracker: string;
-}

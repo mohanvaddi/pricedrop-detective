@@ -1,5 +1,9 @@
 # Copilot Instructions
 
+## Commit Policy
+
+**Never commit code unless the user explicitly says to commit.** Complete all implementation and verification first, then wait for the user to say "commit" or "go ahead and commit" before running any `git commit` command.
+
 ## Dev Commands
 
 ```bash
@@ -89,3 +93,10 @@ The `GET /track` endpoint must be called externally on a schedule (e.g., via cro
 - **Prettier config:** single quotes, trailing commas (ES5 style), 150 char print width.
 
 - **TypeScript:** strict mode with `noUncheckedIndexedAccess` — array index access returns `T | undefined`. Always handle the undefined case (e.g., `prices[prices.length - 1]!` pattern used in the codebase, or null-check first).
+
+
+DB changes flow:
+ # Add/modify a column → edit src/db/schema.ts
+ pnpm db:generate        # generates drizzle/NNNN_*.sql
+ # Review the SQL
+ docker compose up --build   # migrate service applies it; fails loudly if it can't

@@ -1,4 +1,10 @@
+packages:
+  - web
 allowBuilds:
   '@swc/core': true
+  bcrypt: true
+  esbuild: true
   supabase: true
   unrs-resolver: true
+minimumReleaseAgeExclude:
+  - lucide-react@1.27.0
