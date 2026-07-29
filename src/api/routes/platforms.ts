@@ -9,6 +9,15 @@ const PLATFORM_NAMES: Record<string, string> = {
   myntra: 'Myntra',
   ajio: 'Ajio',
   tatacliq: 'Tata CLiQ',
+  ikea: 'IKEA',
+  decathlon: 'Decathlon',
+  lenskart: 'Lenskart',
+  meesho: 'Meesho',
+  nykaafashion: 'Nykaa Fashion',
+  croma: 'Croma',
+  jiomart: 'JioMart',
+  blinkit: 'Blinkit',
+  bigbasket: 'BigBasket',
 };
 
 router.get('/', (_req: Request, res: Response): void => {

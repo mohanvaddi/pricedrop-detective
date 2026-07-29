@@ -9,10 +9,30 @@ import { CustomError } from '../../constants/error';
 const DEFAULT_USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
 
+const ANDROID_USER_AGENT =
+  'Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36';
+
+const IPHONE_USER_AGENT =
+  'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1';
+
 export async function fetchPageWithAxios(url: string): Promise<cheerio.CheerioAPI> {
   const client = axios.create({
     headers: {
       'User-Agent': DEFAULT_USER_AGENT,
+      'Accept-Language': 'en-IN,en;q=0.9',
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+    },
+  });
+  axiosRetry(client, { retries: 5 });
+  const { data } = await client.get<string>(url);
+  return cheerio.load(data);
+}
+
+export async function fetchPageWithMobileAxios(url: string, device: 'android' | 'iphone' = 'android'): Promise<cheerio.CheerioAPI> {
+  const ua = device === 'iphone' ? IPHONE_USER_AGENT : ANDROID_USER_AGENT;
+  const client = axios.create({
+    headers: {
+      'User-Agent': ua,
       'Accept-Language': 'en-IN,en;q=0.9',
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
     },

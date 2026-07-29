@@ -16,6 +16,15 @@ const STORE_COLORS: Record<string, string> = {
   myntra: 'bg-pink-100 text-pink-800',
   ajio: 'bg-red-100 text-red-800',
   tatacliq: 'bg-purple-100 text-purple-800',
+  ikea: 'bg-yellow-100 text-yellow-800',
+  decathlon: 'bg-blue-100 text-blue-900',
+  lenskart: 'bg-teal-100 text-teal-800',
+  meesho: 'bg-fuchsia-100 text-fuchsia-800',
+  nykaafashion: 'bg-rose-100 text-rose-800',
+  croma: 'bg-green-100 text-green-800',
+  jiomart: 'bg-sky-100 text-sky-800',
+  blinkit: 'bg-yellow-100 text-yellow-900',
+  bigbasket: 'bg-red-100 text-red-900',
 };
 
 function StoreRow({ platform }: { platform: Platform }) {

@@ -116,3 +116,14 @@ Stores support to add:
 6. Users should be able to create lists of products and share them with other users.
   - Other users should be able to subscribe to the list and get notified when any product in the list has a price drop. This is to ensure that users can share their favorite products with their friends and family and also to ensure that users can get notified when any product in the list has a price drop.
   - Or Users should be able to subscribe to few products in the list instead of the whole list.
+
+
+
+Added few urls to test
+You need to add these to the supported sites.. so basically add scrapers for each of the urls, then canonicalizze urls, add selectors in selectors.json and try to extract title and price.
+Add the supported stores to the drawer, the hero section where the stores list rotates, add that to the list of supported sites when adding the product links in dashboard page.
+Ask me questions. run in autopilot
+
+
+- Should add rate limiting on how many products a user can add
+- 
