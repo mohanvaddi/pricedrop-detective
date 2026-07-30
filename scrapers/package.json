@@ -1,0 +1,17 @@
+{
+  "name": "@pricedrop/scrapers",
+  "version": "1.0.0",
+  "description": "Standalone scraper microservice (HTTP + cron worker) for pricedrop-detective.",
+  "private": true,
+  "main": "./src/index.ts",
+  "dependencies": {
+    "@pricedrop/shared": "workspace:*",
+    "axios": "^1.18.1",
+    "axios-retry": "^4.5.0",
+    "body-parser": "^2.3.0",
+    "cheerio": "1.2.0",
+    "express": "^5.2.1",
+    "node-cron": "^3.0.3",
+    "playwright": "^1.61.1"
+  }
+}

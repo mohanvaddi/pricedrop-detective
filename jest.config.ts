@@ -11,6 +11,10 @@ const config: Config = {
     }],
   },
   testEnvironment: 'node',
+  moduleNameMapper: {
+    '^@pricedrop/shared$': '<rootDir>/shared/src/index.ts',
+    '^@pricedrop/shared/(.*)$': '<rootDir>/shared/src/$1',
+  },
   testMatch: ['**/__tests__/**/*.test.ts'],
   // Each test hits a live URL — allow up to 60s per case (browser-based scrapers are slower)
   testTimeout: 60_000,

@@ -19,24 +19,28 @@ services:
   # If migrations fail this service exits non-zero and app never starts.
   migrate:
     build: .
-    command: tsx src/db/migrate.ts
+    command: tsx shared/src/db/migrate.ts
     env_file:
       - .env
     environment:
-      DATABASE_URL: postgres://postgres:postgres@postgres:5432/pricedrop
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/pricedrop
     depends_on:
       postgres:
         condition: service_healthy
     restart: 'no'
 
+  # Express API + Telegram/Reddit bots + notification-queue poller.
+  # Delegates all scraping to the scrapers service over HTTP (SCRAPER_URL).
   app:
     build: .
+    command: tsx server/server.ts
     ports:
       - '4000:4000'
     env_file:
       - .env
     environment:
-      DATABASE_URL: postgres://postgres:postgres@postgres:5432/pricedrop
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/pricedrop
+      SCRAPER_URL: http://scrapers:5001
     depends_on:
       postgres:
         condition: service_healthy
@@ -49,21 +53,30 @@ services:
       retries: 5
       start_period: 45s
 
-  # Runs price-check every 5 minutes by calling the /track endpoint.
-  # The app container handles concurrent scraping internally.
-  # Future: swap this container for a job-queue dispatcher (Bull/BullMQ)
-  # to enable worker-thread level parallelism without changing the app service.
-  cron:
-    image: alpine:3.19
-    entrypoint: ['/bin/sh', '-c']
-    command:
-      - |
-        apk add --no-cache curl
-        echo '*/5 * * * * curl -sf http://app:4000/track >> /proc/1/fd/1 2>&1' | crontab -
-        exec crond -f -d 8
+  # Standalone scraper service: HTTP /scrape for on-demand adds + an in-process
+  # cron (node-cron) that runs runBatch() every minute for due products.
+  # Replaces the old alpine `cron` container.
+  scrapers:
+    build: .
+    command: tsx scrapers/src/index.ts
+    ports:
+      - '5001:5001'
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/pricedrop
+      SCRAPER_PORT: '5001'
     depends_on:
-      app:
+      postgres:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -sf http://localhost:5001/health || exit 1']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 45s
     restart: unless-stopped
 
 volumes:

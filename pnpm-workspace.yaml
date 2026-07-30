@@ -1,5 +1,8 @@
 packages:
   - web
+  - shared
+  - server
+  - scrapers
 allowBuilds:
   '@swc/core': true
   bcrypt: true

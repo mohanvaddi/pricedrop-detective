@@ -9,7 +9,7 @@
     "skipLibCheck": true,
     "ignoreDeprecations": "6.0",
     "baseUrl": ".",
-    "paths": { "@/*": ["./src/*"], "@constants/*": ["../constants/*"] },
+    "paths": { "@/*": ["./src/*"], "@shared/*": ["../shared/src/*"] },
 
     /* Bundler mode */
     "moduleResolution": "bundler",
@@ -25,5 +25,5 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src", "../constants"]
+  "include": ["src"]
 }
