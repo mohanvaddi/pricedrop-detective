@@ -82,7 +82,7 @@ async function deliver(n: NotificationQueue): Promise<void> {
   await markNotificationSent(n.id);
 }
 
-async function drainOnce(): Promise<void> {
+export async function drainOnce(): Promise<void> {
   const pending = await findPendingNotifications(50);
   for (const n of pending) {
     try {

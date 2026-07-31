@@ -3,3 +3,5 @@
 dump
 node_modules
 dist
+# Test coverage reports
+coverage/

@@ -14,7 +14,11 @@
     "recategorize": "tsx scrapers/scripts/recategorize.ts",
     "docs:check": "node scripts/check-docs.js",
     "typecheck": "tsc --noEmit",
-    "test": "jest --config jest.config.ts",
+    "test": "jest",
+    "test:cov": "jest --coverage",
+    "test:db": "bash scripts/test-db.sh",
+    "test:live": "jest --config jest.config.live.ts",
+    "test:all": "bash scripts/test.sh all",
     "prepare": "husky"
   },
   "keywords": [],
@@ -31,9 +35,11 @@
     "@types/node": "^26.1.1",
     "@types/node-cron": "^3.0.11",
     "@types/pg": "^8.20.0",
+    "@types/supertest": "^7.2.1",
     "drizzle-kit": "^0.31.10",
     "husky": "^9.1.7",
     "jest": "^30.4.2",
+    "supertest": "^7.2.2",
     "tsx": "^4.19.2",
     "typescript": "^7.0.2"
   }

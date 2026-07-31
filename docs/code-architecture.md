@@ -138,10 +138,49 @@ pnpm scrape:worker  # run one scrape batch and exit
 pnpm recategorize   # re-run the categorizer over uncategorized products
 pnpm typecheck      # tsc --noEmit across the workspace
 pnpm test           # jest
+pnpm test:cov       # jest --coverage (V8 provider → coverage/ report)
 pnpm db:generate    # generate a migration from schema.ts changes
 pnpm db:migrate     # apply migrations
 pnpm docs:check     # warn if functional code changed without docs (used by the pre-commit hook)
 ```
+
+## Testing
+
+Backend is covered by three separated Jest suites (frontend is not tested).
+Config lives in `jest.config.ts` (unit), `jest.config.db.ts` (DB integration)
+and `jest.config.live.ts` (live scrape). Convenience wrapper: `scripts/test.sh
+[unit|db|live|all]`.
+
+| Suite | Command | What it covers | Deps |
+|-------|---------|----------------|------|
+| **Unit** (default) | `pnpm test` | Pure functions + collaborators mocked. Scraper extraction runs against fixture HTML; DB/network/browser are `jest.mock`ed. The primary regression net. | none — fast & offline |
+| **DB integration** | `pnpm test:db` | The hand-written SQL in `shared/src/db/*` and a full API-route flow (register → login → create → list → prices → alert → delete) against a **real ephemeral Postgres**. | Docker |
+| **Live scrape** | `pnpm test:live` | Opt-in. Actually scrapes **one store per fetch strategy** (axios → Meesho, browser → Amazon, session → Ajio) end-to-end. | network + Camoufox/Xvfb |
+
+- **Unit tests** live in `scrapers/__tests__/`, `server/__tests__/`,
+  `shared/__tests__/` as `*.test.ts`. They never touch the DB — the
+  `@pricedrop/shared/db/*` modules are mocked per test.
+- **DB tests** are `*.db.test.ts`. `scripts/test-db.sh` starts `postgres:18` on
+  port 5433, applies Drizzle migrations, runs the suite `--runInBand`, then tears
+  the container down via a `trap` (always, even on failure). `shared/__tests__/db-helpers.ts`
+  provides `resetDb`/`makeUser`/`makeProduct` seed helpers.
+- **Live tests** are `*.live.test.ts`, excluded from the default run. Product
+  URLs rot over time — update the constants in `scrapers/__tests__/scrape.live.test.ts`
+  when one 404s. Assertions are intentionally loose (price > 0, title present).
+- **Fixtures** for extraction tests: `scrapers/__tests__/fixtures/*.html`, crafted
+  to match the exact JSON/DOM selectors each extractor parses.
+
+There is no CI/git trigger — the suites are run manually.
+
+**Coverage:** `pnpm test:cov` (i.e. `jest --coverage`). The project uses the
+`@swc/jest` transform, so coverage runs under the **V8 provider**
+(`coverageProvider: 'v8'` in `jest.config.ts`) — the default Babel/Istanbul
+instrumentation cannot see SWC-transformed code. Reports are written to
+`coverage/` (gitignored): a terminal summary plus an HTML report at
+`coverage/lcov-report/index.html` and `coverage/lcov.info` for tooling. Note the
+default run only exercises the unit suite, so the 13 non-covered store scrapers
+and the Camoufox browser paths show low numbers by design — run `pnpm test:db`
+for DB-layer coverage.
 
 ## Where to make common changes
 
