@@ -1,0 +1,14 @@
+// {
+//   "version": 1,
+//   "hooks": {
+//     "postToolUse": [
+//       {
+//         "type": "command",
+//         "matcher": "edit|create",
+//         "command": "node scripts/docs-hook.js",
+//         "cwd": ".",
+//         "timeoutSec": 10
+//       }
+//     ]
+//   }
+// }

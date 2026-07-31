@@ -12,6 +12,7 @@
     "dev:scrapers": "tsx watch scrapers/src/index.ts",
     "scrape:worker": "tsx scrapers/src/worker.ts",
     "recategorize": "tsx scrapers/scripts/recategorize.ts",
+    "docs:check": "node scripts/check-docs.js",
     "typecheck": "tsc --noEmit",
     "test": "jest --config jest.config.ts",
     "prepare": "husky"

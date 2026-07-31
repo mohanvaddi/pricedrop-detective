@@ -27,7 +27,7 @@ Before writing any code, determine how the site delivers price data:
 
 ```bash
 # Quick test — does plain axios get us the price?
-npx ts-node -e "
+npx tsx -e "
 const axios = require('axios');
 const cheerio = require('cheerio');
 (async () => {
@@ -49,10 +49,14 @@ const cheerio = require('cheerio');
 |-----------|----------|-------------|
 | Price visible in SSR HTML (JSON-LD, meta tags, inline script) | **axios** | `fetchPageWithAxios()` |
 | Site blocks desktop UA but allows mobile UA | **mobile axios** | `fetchPageWithMobileAxios(url, 'android'\|'iphone')` |
-| Price only appears after JavaScript execution | **browser (Playwright)** | `fetchPageWithBrowser(url, waitUntil)` |
-| Site uses TLS fingerprinting (blocks Node.js entirely) | **session-based curl** | `fetchPageWithCurl(url, curlFilePath)` |
+| Price only appears after JavaScript execution | **browser (Camoufox)** | `fetchPageWithBrowser(url, waitUntil)` |
+| Site uses Akamai Bot Manager (blocks all bare fetches) | **session (Camoufox + cookie reuse)** | `fetchPageWithSession(url, platform)` |
 
-**Priority: Always prefer axios over browser** — it's 10x faster, uses no memory for Chromium, and works in CI.
+**Priority: Always prefer axios over browser** — it's 10x faster, uses no memory for the browser, and works in CI.
+
+> Paths in this skill are repo-root-relative. The scrapers package lives under
+> `scrapers/` — e.g. `scrapers/src/scraper/platforms/{platform}.ts`. See
+> `docs/scrapers.md` and `docs/session-scraper.md` for the full picture.
 
 ### 2. Determine URL Canonicalization
 
@@ -65,13 +69,13 @@ The canonical form is `{platform}:{product_id}`. Used for deduplication.
 
 ### 3. Create the Scraper File
 
-Create `src/scraper/platforms/{platform}.ts`:
+Create `scrapers/src/scraper/platforms/{platform}.ts`:
 
 ```typescript
 import * as cheerio from 'cheerio';
 import { BaseScraper } from '../base';
 // Import the appropriate fetch helper if overriding fetchPage:
-// import { fetchPageWithMobileAxios, fetchPageWithBrowser, fetchPageWithCurl } from '../base';
+// import { fetchPageWithMobileAxios, fetchPageWithBrowser, fetchPageWithSession } from '../base';
 
 /**
  * {PlatformName} scraper.
@@ -139,7 +143,7 @@ export class {PlatformName}Scraper extends BaseScraper {
 
 **All files that must be updated (in order):**
 
-#### a) `src/scraper/selectors.json`
+#### a) `scrapers/src/scraper/selectors.json`
 
 Add entry (alphabetical order):
 
@@ -152,9 +156,9 @@ Add entry (alphabetical order):
 }
 ```
 
-Valid `fetchMethod` values: `"axios"`, `"browser"`, `"curl"`
+Valid `fetchMethod` values: `"axios"`, `"mobile"`, `"browser"`, `"session"`
 
-#### b) `src/scraper/index.ts`
+#### b) `scrapers/src/scraper/index.ts`
 
 Add import and registry entry:
 
@@ -165,9 +169,9 @@ import { {PlatformName}Scraper } from './platforms/{platform}';
 {platform}: new {PlatformName}Scraper(),
 ```
 
-#### c) `src/constants/schema.ts`
+#### c) `scrapers/src/detect.ts`
 
-Add hostname mapping to `HOSTNAME_MAP` array:
+Add hostname mapping to the `HOSTNAME_MAP` array:
 
 ```typescript
 ['{hostname}.com', '{platform}'],
@@ -175,7 +179,11 @@ Add hostname mapping to `HOSTNAME_MAP` array:
 
 Place more specific hostnames before generic ones (e.g., `nykaafashion.com` before `nykaa.com`).
 
-#### d) `src/api/routes/platforms.ts`
+#### d) `scrapers/src/worker.ts`
+
+Add the platform key to the `platforms` allow-list used by `platformOf()`.
+
+#### e) `server/src/api/routes/platforms.ts`
 
 Add display name to `PLATFORM_NAMES`:
 
@@ -183,7 +191,7 @@ Add display name to `PLATFORM_NAMES`:
 {platform}: '{Display Name}',
 ```
 
-#### e) `web/src/components/StoreBadge.tsx`
+#### f) `web/src/components/StoreBadge.tsx`
 
 Add to `STORE_META`:
 
@@ -191,7 +199,7 @@ Add to `STORE_META`:
 {platform}: { label: '{Display Name}', color: 'bg-{color}-100 text-{color}-800 border-{color}-200' },
 ```
 
-#### f) `web/src/components/StoreDrawer.tsx`
+#### g) `web/src/components/StoreDrawer.tsx`
 
 Add to `STORE_COLORS`:
 
@@ -199,7 +207,7 @@ Add to `STORE_COLORS`:
 {platform}: 'bg-{color}-100 text-{color}-800',
 ```
 
-#### g) `web/src/pages/Home.tsx`
+#### h) `web/src/pages/Home.tsx`
 
 Add to the `PLATFORMS` array:
 
@@ -209,7 +217,7 @@ const PLATFORMS = [..., '{Display Name}'];
 
 ### 5. Add Test URL
 
-Add a product URL to `tests.json`:
+Add a product URL to `scrapers/tests.json`:
 
 ```json
 [
@@ -225,9 +233,9 @@ Add a product URL to `tests.json`:
 ### Quick single-URL test (recommended first step)
 
 ```bash
-npx ts-node -e "
-import { scrape } from './src/scraper';
-import { detectPlatform } from './src/constants/schema';
+npx tsx -e "
+import { scrape } from './scrapers/src/scraper';
+import { detectPlatform } from './scrapers/src/detect';
 
 const url = 'YOUR_PRODUCT_URL';
 const platform = detectPlatform(url);
@@ -241,15 +249,19 @@ if (platform) {
 ### Run the full test suite
 
 ```bash
-npx jest __tests__/scraper.test.ts --testTimeout=120000
+pnpm test
+# or a single suite:
+npx jest scrapers/__tests__/scraper.test.ts --testTimeout=120000
+# browser/session platforms (Amazon, Blinkit, AJIO) need the Docker runtime:
+docker compose exec scrapers npx jest --config jest.config.ts
 ```
 
 ### Debug a specific extraction issue
 
 ```bash
-npx ts-node -e "
-import { resolve } from './src/scraper';
-import { detectPlatform } from './src/constants/schema';
+npx tsx -e "
+import { resolve } from './scrapers/src/scraper';
+import { detectPlatform } from './scrapers/src/detect';
 
 const url = 'YOUR_PRODUCT_URL';
 const platform = detectPlatform(url)!;
@@ -296,7 +308,7 @@ override async fetchPage(url: string): Promise<cheerio.CheerioAPI> {
 **Cons:** Mobile HTML may have different selectors. Test both `'android'` and `'iphone'`.
 **Used by:** Meesho, Nykaa Fashion, Croma.
 
-### Strategy 3: Browser (Playwright)
+### Strategy 3: Browser (Camoufox)
 
 **When to use:** Price is only available after JavaScript execution (SPA, React hydration).
 
@@ -307,30 +319,41 @@ override async fetchPage(url: string): Promise<cheerio.CheerioAPI> {
 }
 ```
 
+Rendering uses **Camoufox** (stealth Firefox) under the hood — see
+`docs/session-scraper.md`. Camoufox owns the fingerprint, so don't override
+`userAgent`/`locale` in a context.
+
 **waitUntil guidance:**
 - `'domcontentloaded'` — fastest, use when data is in SSR HTML or early hydration
 - `'load'` — waits for images/resources; rarely needed for price extraction
 - `'networkidle'` — waits for no network activity; **avoid if site has WebSockets/polling** (e.g., Blinkit — use domcontentloaded instead)
 
 **Pros:** Works for any site, executes JS fully.
-**Cons:** Slow (10-45s), requires Chromium installed, heavy on memory. Not ideal for scheduled tracking.
+**Cons:** Slow (10-45s), requires the Camoufox/Firefox runtime (installed in Docker), heavy on memory. Not ideal for scheduled tracking.
 **Used by:** Amazon, Blinkit, JioMart.
 
-### Strategy 4: Session-based Curl
+### Strategy 4: Session / cookie-based (Camoufox render + cookie reuse)
 
-**When to use:** Site uses TLS fingerprinting that detects Node.js HTTP clients (Akamai Bot Manager Advanced). Even Playwright gets blocked.
+**When to use:** Site is behind **Akamai Bot Manager**, which rejects *every*
+bare fetch — even the browser's own request API. Curl replay of solved cookies
+does **not** work; the product URL must be navigated in a real browser.
 
 ```typescript
 override async fetchPage(url: string): Promise<cheerio.CheerioAPI> {
-  return fetchPageWithCurl(url, path.join(__dirname, '../../curl-sessions/{platform}_curl.txt'));
+  return fetchPageWithSession(url, '{platform}');
 }
 ```
 
-**Setup:** The user must export a "Copy as cURL" from browser DevTools and save it as the curl file. Cookies expire periodically and need manual refresh.
+Then register a `CONFIGS['{platform}']` entry in
+`scrapers/src/scraper/session-manager.ts` (`seedUrls`, `cookieDomain`, `ttlMs`,
+`readyExpression`) and set `"fetchMethod": "session"` in `selectors.json`. The
+session manager solves Akamai once via Camoufox, **persists the solved cookies**
+to the `scraper_sessions` table, and injects them into future renders to skip
+re-solving. Full details in `docs/session-scraper.md`.
 
-**Pros:** Bypasses even advanced TLS fingerprinting.
-**Cons:** Requires manual cookie refresh, not automatable long-term.
-**Used by:** Ajio.
+**Pros:** Bypasses Akamai; cookie reuse keeps subsequent scrapes fast (~6-7s).
+**Cons:** First solve is slow (~30-60s); requires the Camoufox runtime.
+**Used by:** AJIO.
 
 ---
 
@@ -358,17 +381,17 @@ const p = parseInt(String(rawPrice).replace(/[₹,]/g, ''), 10);
 ### 4. WAF "Access Denied" pages
 If you get a 200 response but HTML is just "Access Denied" or a challenge page:
 - Try mobile user-agent first
-- If that fails, try browser
-- Last resort: session-based curl
+- If that fails, try browser (Camoufox)
+- For Akamai-gated sites, use the session strategy (`fetchPageWithSession`)
 
 ### 5. Location-gated pricing
 Some sites (JioMart) return price=0 without Indian IP. The scraper code is correct but will fail from non-Indian infrastructure. Document this in the `note` field of selectors.json.
 
 ### 6. networkidle timeout
-If Playwright hangs for 45+ seconds, the site likely has persistent connections (WebSockets, event streams). Switch to `'domcontentloaded'`.
+If the browser hangs for 45+ seconds, the site likely has persistent connections (WebSockets, event streams). Switch to `'domcontentloaded'`.
 
-### 7. Frontend constants/types.ts
-Never import from `drizzle-orm` or any backend-only module in `constants/types.ts` — it's shared with the frontend Vite build.
+### 7. Frontend type imports
+Never import from `drizzle-orm` or any backend-only module in code shared with the frontend Vite build.
 
 ---
 
@@ -376,32 +399,37 @@ Never import from `drizzle-orm` or any backend-only module in `constants/types.t
 
 | File | Purpose |
 |------|---------|
-| `src/scraper/base.ts` | BaseScraper class + fetch helpers |
-| `src/scraper/platforms/{platform}.ts` | Each platform's scraper implementation |
-| `src/scraper/index.ts` | Scraper registry, exports `scrape()`, `resolve()` |
-| `src/scraper/selectors.json` | Platform metadata (fetchMethod, notes) |
-| `src/constants/schema.ts` | `detectPlatform()` hostname mapping + zod DTO |
-| `src/api/routes/platforms.ts` | API display names |
+| `scrapers/src/scraper/base.ts` | BaseScraper class + fetch helpers (axios/mobile/browser/session) |
+| `scrapers/src/scraper/browser.ts` | Camoufox launcher + session render engine |
+| `scrapers/src/scraper/session-manager.ts` | Per-platform session reuse/refresh (Akamai) |
+| `scrapers/src/scraper/platforms/{platform}.ts` | Each platform's scraper implementation |
+| `scrapers/src/scraper/index.ts` | Scraper registry, exports `scrape()`, `resolve()` |
+| `scrapers/src/scraper/selectors.json` | Platform metadata (fetchMethod, notes) |
+| `scrapers/src/detect.ts` | `detectPlatform()` hostname mapping (`HOSTNAME_MAP`) |
+| `scrapers/src/worker.ts` | Batch worker; has a `platforms` allow-list |
+| `server/src/api/routes/platforms.ts` | API display names |
 | `web/src/components/StoreBadge.tsx` | Frontend badge colors |
 | `web/src/components/StoreDrawer.tsx` | Frontend drawer store colors |
 | `web/src/pages/Home.tsx` | Hero section platform list |
-| `tests.json` | Live test URLs for integration tests |
-| `__tests__/scraper.test.ts` | Integration test runner |
+| `scrapers/tests.json` | Live test URLs for integration tests |
+| `scrapers/__tests__/scraper.test.ts` | Integration test runner |
 
 ---
 
 ## Checklist (copy when implementing)
 
 - [ ] Investigate site — determine fetch strategy and price source
-- [ ] Create `src/scraper/platforms/{platform}.ts` with complete class
-- [ ] Add entry to `src/scraper/selectors.json`
-- [ ] Register in `src/scraper/index.ts` (import + registry)
-- [ ] Add hostname(s) to `HOSTNAME_MAP` in `src/constants/schema.ts`
-- [ ] Add display name to `src/api/routes/platforms.ts`
+- [ ] Create `scrapers/src/scraper/platforms/{platform}.ts` with complete class
+- [ ] Add entry to `scrapers/src/scraper/selectors.json`
+- [ ] Register in `scrapers/src/scraper/index.ts` (import + registry)
+- [ ] Add hostname(s) to `HOSTNAME_MAP` in `scrapers/src/detect.ts`
+- [ ] Add platform key to the `platforms` allow-list in `scrapers/src/worker.ts`
+- [ ] (session strategy only) Add `CONFIGS['{platform}']` in `scrapers/src/scraper/session-manager.ts`
+- [ ] Add display name to `server/src/api/routes/platforms.ts`
 - [ ] Add colors to `web/src/components/StoreBadge.tsx`
 - [ ] Add colors to `web/src/components/StoreDrawer.tsx`
 - [ ] Add to `PLATFORMS` array in `web/src/pages/Home.tsx`
-- [ ] Add test URL to `tests.json`
+- [ ] Add test URL to `scrapers/tests.json`
 - [ ] Run single-URL test to verify extraction works
-- [ ] Run full test suite: `npx jest __tests__/scraper.test.ts --testTimeout=120000`
-- [ ] Verify TypeScript compiles: `npx tsc --noEmit` (backend) and `cd web && npx tsc -b` (frontend)
+- [ ] Run full test suite: `pnpm test` (browser/session platforms: `docker compose exec scrapers npx jest --config jest.config.ts`)
+- [ ] Verify TypeScript compiles: `pnpm typecheck` (workspace) and `cd web && npx tsc -b` (frontend)
