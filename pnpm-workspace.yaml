@@ -6,6 +6,7 @@ packages:
 allowBuilds:
   '@swc/core': true
   bcrypt: true
+  better-sqlite3: true
   esbuild: true
   supabase: true
   unrs-resolver: true

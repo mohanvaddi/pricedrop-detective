@@ -22,10 +22,10 @@
     ]
   },
   "ajio": {
-    "fetchMethod": "curl",
+    "fetchMethod": "session",
     "price": [],
     "title": [],
-    "note": "Uses system curl binary with session cookies from ajio_curl.txt to bypass Akamai WAF TLS fingerprinting. Refresh: paste new 'Copy as cURL' from DevTools into ajio_curl.txt."
+    "note": "Session/cookie-based scraping (3rd type). Camoufox harvests a WAF-approved session (cookies+UA) into the scraper_sessions table; replayed via the curl fast-path until it expires, then auto-regenerated. See scraper/session-manager.ts."
   },
   "myntra": {
     "fetchMethod": "axios",
@@ -33,8 +33,13 @@
     "title": [],
     "jsonExtraction": {
       "source": "html",
-      "priceFields": ["discountedPrice", "mrp"],
-      "titleFields": ["name"]
+      "priceFields": [
+        "discountedPrice",
+        "mrp"
+      ],
+      "titleFields": [
+        "name"
+      ]
     }
   },
   "tatacliq": {
@@ -98,4 +103,3 @@
     "note": "Standard axios. Price from __NEXT_DATA__ productDetails.children[0].pricing.discount.prim_price.sp."
   }
 }
-

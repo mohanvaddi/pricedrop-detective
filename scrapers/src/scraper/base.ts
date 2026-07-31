@@ -3,7 +3,7 @@ import axios from 'axios';
 import axiosRetry from 'axios-retry';
 import { execSync } from 'child_process';
 import * as fs from 'fs';
-import { chromium } from 'playwright';
+import { launchCamoufox } from './browser';
 import { CustomError } from '@pricedrop/shared/error';
 
 const DEFAULT_USER_AGENT =
@@ -43,9 +43,34 @@ export async function fetchPageWithMobileAxios(url: string, device: 'android' | 
 }
 
 /**
+ * Low-level fetch via the system `curl` binary. curl's TLS profile passes
+ * fingerprint-based bot detection (e.g. Akamai on AJIO) that blocks Node.js
+ * HTTP clients. Returns raw HTML; throws `SessionExpired` on an Access-Denied wall.
+ */
+export function curlFetch(url: string, opts: { cookie?: string | undefined; userAgent?: string | undefined; headers?: Record<string, string> | undefined } = {}): string {
+  const args: string[] = [];
+  if (opts.cookie) args.push(`-b ${JSON.stringify(opts.cookie)}`);
+  if (opts.userAgent) args.push(`-H ${JSON.stringify(`user-agent: ${opts.userAgent}`)}`);
+  for (const [k, v] of Object.entries(opts.headers ?? {})) {
+    if (/^(host|content-length|cookie|user-agent):/i.test(`${k}:`)) continue;
+    args.push(`-H ${JSON.stringify(`${k}: ${v}`)}`);
+  }
+
+  const cmd = `curl -s --max-time 30 --http2 --compressed ${args.join(' ')} ${JSON.stringify(url)}`;
+  const html = execSync(cmd, { encoding: 'utf8', maxBuffer: 10 * 1024 * 1024 });
+  // Detect an expired/challenged session: an explicit WAF block, a known Akamai
+  // interstitial, or an abnormally small body where a real product page is large.
+  const challenged = /Access Denied|Pardon Our Interruption|Reference #\d|Request unsuccessful|akamai/i.test(html);
+  if ((challenged && html.length < 8000) || html.trim().length < 500) {
+    throw new CustomError('curl fetch hit a WAF challenge — session cookies have expired.', 'SessionExpired');
+  }
+  return html;
+}
+
+/**
  * Fetch a page by executing the system `curl` binary with headers/cookies parsed
  * from a reference curl command file (e.g. ajio_curl.txt exported from DevTools).
- * This bypasses TLS-fingerprint-based bot detection that blocks Node.js HTTP clients.
+ * Retained as a manual fallback; the automated session path is preferred.
  *
  * Cookie refresh: paste a new "Copy as cURL" export from DevTools into curlFilePath.
  */
@@ -60,52 +85,37 @@ export async function fetchPageWithCurl(url: string, curlFilePath: string): Prom
   const curlTemplate = fs.readFileSync(curlFilePath, 'utf8');
 
   // Extract -H headers (excluding host/content-length which vary per request)
-  const headerArgs = [...curlTemplate.matchAll(/-H '([^']+)'/g)]
-    .map((m) => m[1]!)
-    .filter((h) => !/^(host|content-length):/i.test(h))
-    .map((h) => `-H ${JSON.stringify(h)}`)
-    .join(' ');
+  const headers: Record<string, string> = {};
+  for (const m of curlTemplate.matchAll(/-H '([^']+)'/g)) {
+    const raw = m[1]!;
+    const idx = raw.indexOf(':');
+    if (idx === -1) continue;
+    headers[raw.slice(0, idx).trim()] = raw.slice(idx + 1).trim();
+  }
 
   // Extract -b cookies
   const cookieMatch = curlTemplate.match(/-b '([^']+)'/);
-  const cookieArg = cookieMatch ? `-b ${JSON.stringify(cookieMatch[1]!)}` : '';
-
-  const cmd = `curl -s --max-time 30 --http2 ${cookieArg} ${headerArgs} ${JSON.stringify(url)}`;
-
-  const html = execSync(cmd, { encoding: 'utf8', maxBuffer: 10 * 1024 * 1024 });
-  if (html.includes('Access Denied') && html.length < 5000) {
-    throw new CustomError(
-      'curl fetch returned Access Denied — the session cookies in the curl file have expired. Refresh by pasting a new "Copy as cURL" export.',
-      'SessionExpired',
-    );
-  }
+  const html = curlFetch(url, { cookie: cookieMatch?.[1], headers });
   return cheerio.load(html);
 }
 
+/**
+ * Session/cookie-based fetch ("3rd scraping type"). AJIO's Akamai rejects bare
+ * HTTP fetches, so the page is navigated in Camoufox while a solved cookie set
+ * is injected (and refreshed) to skip re-solving where possible. Returns the
+ * rendered HTML wrapped in cheerio.
+ */
+export async function fetchPageWithSession(url: string, platform: string): Promise<cheerio.CheerioAPI> {
+  const { sessionManager } = await import('./session-manager');
+  return cheerio.load(await sessionManager.render(platform, url));
+}
+
 export async function fetchPageWithBrowser(url: string, waitUntil: 'domcontentloaded' | 'networkidle' | 'load' = 'domcontentloaded'): Promise<cheerio.CheerioAPI> {
-  const browser = await chromium.launch({
-    headless: true,
-    args: [
-      '--disable-blink-features=AutomationControlled',
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-    ],
-  });
+  const browser = await launchCamoufox();
   try {
-    const context = await browser.newContext({
-      userAgent: DEFAULT_USER_AGENT,
-      locale: 'en-IN',
-      viewport: { width: 1920, height: 1080 },
-      extraHTTPHeaders: {
-        'Accept-Language': 'en-IN,en;q=0.9',
-        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-        'Accept-Encoding': 'gzip, deflate, br',
-      },
-    });
-    // Hide automation indicators
-    await context.addInitScript(() => {
-      Object.defineProperty(navigator, 'webdriver', { get: () => false });
-    });
+    // Camoufox owns the fingerprint (user-agent, locale, navigator props), so
+    // keep the context minimal — overriding userAgent here would desync the spoof.
+    const context = await browser.newContext();
     const page = await context.newPage();
     await page.goto(url, { waitUntil, timeout: 45000 });
 

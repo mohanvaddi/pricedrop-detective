@@ -1,21 +1,19 @@
 import * as cheerio from 'cheerio';
-import * as path from 'path';
-import { BaseScraper, fetchPageWithCurl } from '../base';
+import { BaseScraper, fetchPageWithSession } from '../base';
 
 /**
- * Ajio scraper — uses the system curl binary with a pre-seeded session (ajio_curl.txt)
- * to bypass Akamai WAF TLS fingerprinting. Node.js HTTP clients are blocked by Akamai
- * regardless of headers; the curl binary has a different TLS profile that passes.
+ * Ajio scraper — session/cookie-based ("3rd scraping type").
  *
- * Cookie refresh: in Chrome/Brave DevTools → Network tab → right-click any ajio.com
- * request → "Copy as cURL (bash)" → paste into ajio_curl.txt at the project root.
+ * Akamai WAF blocks Node.js HTTP clients by TLS fingerprint. We launch Camoufox
+ * (stealth Firefox) once to harvest a WAF-approved session (cookies + UA), cache
+ * it in Postgres, and replay it via the system `curl` binary for cheap fetches
+ * until the session expires — then Camoufox regenerates it automatically. This
+ * replaces the old manual ajio_curl.txt paste flow.
  *
  * Extraction strategy:
  *   1. window.__PRELOADED_STATE__.product.productDetails  (price.value, name)
  *   2. JSON-LD schema.org ProductGroup fallback           (offers.price, name)
  */
-
-const CURL_FILE = path.resolve(process.cwd(), 'ajio_curl.txt');
 
 interface ProductDetails {
   price?: { value?: number };
@@ -66,7 +64,7 @@ export class AjioScraper extends BaseScraper {
   }
 
   override async fetchPage(url: string): Promise<cheerio.CheerioAPI> {
-    return fetchPageWithCurl(url, CURL_FILE);
+    return fetchPageWithSession(url, 'ajio');
   }
 
   extractPrice($: cheerio.CheerioAPI): number {

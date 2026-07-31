@@ -2,7 +2,7 @@ import type { Config } from 'jest';
 
 const config: Config = {
   transform: {
-    '^.+\\.tsx?$': ['@swc/jest', {
+    '^.+\\.[jt]sx?$': ['@swc/jest', {
       jsc: {
         target: 'es2016',
         parser: { syntax: 'typescript' },
@@ -10,6 +10,10 @@ const config: Config = {
       module: { type: 'commonjs' },
     }],
   },
+  // camoufox-js and parts of its dependency tree ship as ESM. Transform all
+  // loaded node_modules to CJS so the browser-based scrapers run under Jest
+  // (transforming already-CJS files is a harmless passthrough).
+  transformIgnorePatterns: [],
   testEnvironment: 'node',
   moduleNameMapper: {
     '^@pricedrop/shared$': '<rootDir>/shared/src/index.ts',

@@ -14,10 +14,14 @@ COPY scrapers/package.json ./scrapers/
 COPY web/package.json ./web/
 RUN pnpm install --frozen-lockfile
 
-# Install Playwright's Chromium browser and its system dependencies.
-# playwright now lives in the @pricedrop/scrapers workspace package, so run the
-# installer from that package's context (its node_modules/.bin) rather than root.
-RUN pnpm --filter @pricedrop/scrapers exec playwright install --with-deps chromium
+# Install the Camoufox browser (stealth Firefox fork) + Firefox system deps and
+# xvfb (headed stealth on a virtual display). Camoufox replaces Chromium for all
+# browser-based scraping. camoufox-js lives in the @pricedrop/scrapers package.
+ENV CAMOUFOX_INSTALL_DIR=/opt/camoufox
+RUN pnpm --filter @pricedrop/scrapers exec playwright install-deps firefox \
+    && apt-get update && apt-get install -y --no-install-recommends xvfb \
+    && rm -rf /var/lib/apt/lists/* \
+    && pnpm --filter @pricedrop/scrapers exec camoufox-js fetch
 
 # Copy source after heavy layers are cached
 COPY . .
